@@ -204,6 +204,7 @@ fn layout_of_uncached<'tcx>(
     debug_assert!(!ty.has_non_region_infer());
 
     Ok(match *ty.kind() {
+        ty::Splat(_) => todo!(),
         ty::Pat(ty, pat) => {
             let layout = cx.layout_of(ty)?.layout;
             let mut layout = LayoutData::clone(&layout.0);

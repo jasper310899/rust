@@ -744,6 +744,10 @@ pub trait PrettyPrinter<'tcx>: Printer<'tcx> + fmt::Write {
                 }
                 p!(print(ty::TypeAndMut { ty, mutbl }))
             }
+            ty::Splat(ty) => {
+                p!("...");
+                p!(print(ty))
+            }
             ty::Never => p!("!"),
             ty::Tuple(tys) => {
                 p!("(", comma_sep(tys.iter()));

@@ -62,6 +62,7 @@ pub(crate) fn eval_nullary_intrinsic<'tcx>(
             ConstValue::from_u128(tcx.type_id_hash(tp_ty).as_u128())
         }
         sym::variant_count => match tp_ty.kind() {
+            ty::Splat(_) => todo!(),
             // Correctly handles non-monomorphic calls, so there is no need for ensure_monomorphic_enough.
             ty::Adt(adt, _) => ConstValue::from_target_usize(adt.variants().len() as u64, &tcx),
             ty::Alias(..) | ty::Param(_) | ty::Placeholder(_) | ty::Infer(_) => {

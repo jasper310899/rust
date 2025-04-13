@@ -676,6 +676,7 @@ impl<'rt, 'tcx, M: Machine<'tcx>> ValidityVisitor<'rt, 'tcx, M> {
         // Go over all the primitive types
         let ty = value.layout.ty;
         match ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool => {
                 let scalar = self.read_scalar(value, ExpectedKind::Bool)?;
                 try_validation!(

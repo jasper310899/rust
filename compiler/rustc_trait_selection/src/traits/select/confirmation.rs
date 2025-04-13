@@ -1305,6 +1305,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
         let tcx = self.tcx();
         let self_ty = obligation.predicate.self_ty();
         match *self_ty.skip_binder().kind() {
+            ty::Splat(_) => todo!(),
             // `&mut T` and `&T` always implement `BikeshedGuaranteedNoDrop`.
             ty::Ref(..) => {}
             // `ManuallyDrop<T>` always implements `BikeshedGuaranteedNoDrop`.

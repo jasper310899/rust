@@ -121,6 +121,7 @@ impl<'tcx> ty::Const<'tcx> {
 fn push_inner<'tcx>(stack: &mut TypeWalkerStack<'tcx>, parent: GenericArg<'tcx>) {
     match parent.unpack() {
         GenericArgKind::Type(parent_ty) => match *parent_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(_)

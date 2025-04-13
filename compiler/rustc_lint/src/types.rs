@@ -1144,6 +1144,7 @@ impl<'a, 'tcx> ImproperCTypesVisitor<'a, 'tcx> {
         }
 
         match *ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Adt(def, args) => {
                 if let Some(boxed) = ty.boxed_ty()
                     && matches!(self.mode, CItemKind::Definition)

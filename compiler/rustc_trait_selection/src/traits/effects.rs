@@ -252,6 +252,7 @@ fn evaluate_host_effect_for_destruct_goal<'tcx>(
     let self_ty = obligation.predicate.self_ty();
 
     let const_conditions = match *self_ty.kind() {
+        ty::Splat(_) => todo!(),
         // An ADT is `~const Destruct` only if all of the fields are,
         // *and* if there is a `Drop` impl, that `Drop` impl is also `~const`.
         ty::Adt(adt_def, args) => {

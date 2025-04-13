@@ -123,6 +123,9 @@ pub enum TyKind<I: Interner> {
     /// The pointee of an array slice. Written as `[T]`.
     Slice(I::Ty),
 
+    /// The pointee of an array slice. Written as `[T]`.
+    Splat(I::Ty),
+
     /// A raw pointer. Written as `*mut T` or `*const T`
     RawPtr(I::Ty, Mutability),
 
@@ -329,6 +332,7 @@ impl<I: Interner> TyKind<I> {
             | ty::Alias(_, _)
             | ty::Param(_)
             | ty::Bound(_, _)
+            | ty::Splat(_)
             | ty::Placeholder(_) => false,
         }
     }
@@ -363,6 +367,7 @@ impl<I: Interner> fmt::Debug for TyKind<I> {
             Array(t, c) => write!(f, "[{t:?}; {c:?}]"),
             Pat(t, p) => write!(f, "pattern_type!({t:?} is {p:?})"),
             Slice(t) => write!(f, "[{:?}]", &t),
+            Splat(t) => write!(f, "...{:?}", &t),
             RawPtr(ty, mutbl) => write!(f, "*{} {:?}", mutbl.ptr_str(), ty),
             Ref(r, t, m) => write!(f, "&{:?} {}{:?}", r, m.prefix_str(), t),
             FnDef(d, s) => f.debug_tuple("FnDef").field(d).field(&s).finish(),

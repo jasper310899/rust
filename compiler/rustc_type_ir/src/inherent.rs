@@ -160,6 +160,7 @@ pub trait Ty<I: Interner<Ty = Self>>:
         match self.kind() {
             ty::Dynamic(_, _, ty::Dyn) | ty::Slice(_) | ty::Str => true,
             ty::Bool
+            | ty::Splat(_)
             | ty::Char
             | ty::Int(_)
             | ty::Uint(_)

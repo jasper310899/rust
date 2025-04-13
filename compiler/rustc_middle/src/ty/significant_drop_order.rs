@@ -120,6 +120,7 @@ pub fn extract_component_with_significant_dtor<'tcx>(
 #[instrument(level = "trace", skip(tcx))]
 pub fn ty_dtor_span<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> Option<Span> {
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         ty::Bool
         | ty::Char
         | ty::Int(_)

@@ -260,7 +260,6 @@ fn type_trailing_braced_mac_call(mut ty: &ast::Ty) -> Option<&ast::MacCall> {
             | ast::TyKind::PinnedRef(_, mut_ty) => {
                 ty = &mut_ty.ty;
             }
-
             ast::TyKind::UnsafeBinder(binder) => {
                 ty = &binder.inner_ty;
             }
@@ -291,6 +290,7 @@ fn type_trailing_braced_mac_call(mut ty: &ast::Ty) -> Option<&ast::MacCall> {
 
             ast::TyKind::Slice(..)
             | ast::TyKind::Array(..)
+            | ast::TyKind::Splat(..)
             | ast::TyKind::Never
             | ast::TyKind::Tup(..)
             | ast::TyKind::Paren(..)

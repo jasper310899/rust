@@ -325,6 +325,7 @@ impl<'tcx> Stable<'tcx> for ty::TyKind<'tcx> {
     type T = stable_mir::ty::TyKind;
     fn stable(&self, tables: &mut Tables<'_>) -> Self::T {
         match self {
+            ty::Splat(_) => todo!(),
             ty::Bool => TyKind::RigidTy(RigidTy::Bool),
             ty::Char => TyKind::RigidTy(RigidTy::Char),
             ty::Int(int_ty) => TyKind::RigidTy(RigidTy::Int(int_ty.stable(tables))),

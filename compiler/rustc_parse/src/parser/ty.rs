@@ -258,7 +258,9 @@ impl<'a> Parser<'a> {
 
         let lo = self.token.span;
         let mut impl_dyn_multi = false;
-        let kind = if self.check(exp!(OpenParen)) {
+        let kind = if self.eat(exp!(DotDotDot)) {
+            self.parse_ty_splat()?
+        } else if self.check(exp!(OpenParen)) {
             self.parse_ty_tuple_or_parens(lo, allow_plus)?
         } else if self.eat(exp!(Bang)) {
             // Never type `!`
@@ -475,6 +477,12 @@ impl<'a> Parser<'a> {
         });
         let ty = self.parse_ty_no_plus()?;
         Ok(TyKind::Ptr(MutTy { ty, mutbl }))
+    }
+
+    /// Parses a raw pointer type: `*[const | mut] $type`.
+    fn parse_ty_splat(&mut self) -> PResult<'a, TyKind> {
+        let ty = self.parse_ty()?;
+        Ok(TyKind::Splat( ty ))
     }
 
     /// Parses an array (`[TYPE; EXPR]`) or slice (`[TYPE]`) type.

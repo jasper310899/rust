@@ -157,6 +157,7 @@ impl<'tcx> InherentCollect<'tcx> {
             self_ty = base;
         }
         match *self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Adt(def, _) => self.check_def_id(id, self_ty, def.did()),
             ty::Foreign(did) => self.check_def_id(id, self_ty, did),
             ty::Dynamic(data, ..) if data.principal_def_id().is_some() => {

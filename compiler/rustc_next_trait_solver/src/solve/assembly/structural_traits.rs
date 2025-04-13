@@ -27,6 +27,7 @@ where
 {
     let cx = ecx.cx();
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         ty::Uint(_)
         | ty::Int(_)
         | ty::Bool
@@ -112,6 +113,7 @@ where
     I: Interner,
 {
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         // impl Sized for u*, i*, bool, f*, FnDef, FnPtr, *(const/mut) T, char, &mut? T, [T; N], dyn* Trait, !
         // impl Sized for Coroutine, CoroutineWitness, Closure, CoroutineClosure
         ty::Infer(ty::IntVar(_) | ty::FloatVar(_))
@@ -182,6 +184,7 @@ where
     I: Interner,
 {
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         // impl Copy/Clone for FnDef, FnPtr
         ty::FnDef(..) | ty::FnPtr(..) | ty::Error(_) => Ok(ty::Binder::dummy(vec![])),
 
@@ -259,6 +262,7 @@ pub(in crate::solve) fn extract_tupled_inputs_and_output_from_callable<I: Intern
     goal_kind: ty::ClosureKind,
 ) -> Result<Option<ty::Binder<I, (I::Ty, I::Ty)>>, NoSolution> {
     match self_ty.kind() {
+        ty::Splat(_) => todo!(),
         // keep this in sync with assemble_fn_pointer_candidates until the old solver is removed.
         ty::FnDef(def_id, args) => {
             let sig = cx.fn_sig(def_id);
@@ -417,6 +421,7 @@ pub(in crate::solve) fn extract_tupled_inputs_and_output_from_async_callable<I: 
     env_region: I::Region,
 ) -> Result<(ty::Binder<I, AsyncCallableRelevantTypes<I>>, Vec<I::Predicate>), NoSolution> {
     match self_ty.kind() {
+        ty::Splat(_) => todo!(),
         ty::CoroutineClosure(def_id, args) => {
             let args = args.as_coroutine_closure();
             let kind_ty = args.kind_ty();
@@ -654,6 +659,7 @@ pub(in crate::solve) fn extract_fn_def_from_const_callable<I: Interner>(
     self_ty: I::Ty,
 ) -> Result<(ty::Binder<I, (I::FnInputTys, I::Ty)>, I::DefId, I::GenericArgs), NoSolution> {
     match self_ty.kind() {
+        ty::Splat(_) => todo!(),
         ty::FnDef(def_id, args) => {
             let sig = cx.fn_sig(def_id);
             if sig.skip_binder().is_fn_trait_compatible()
@@ -723,6 +729,7 @@ pub(in crate::solve) fn const_conditions_for_destruct<I: Interner>(
     let destruct_def_id = cx.require_lang_item(TraitSolverLangItem::Destruct);
 
     match self_ty.kind() {
+        ty::Splat(_) => todo!(),
         // An ADT is `~const Destruct` only if all of the fields are,
         // *and* if there is a `Drop` impl, that `Drop` impl is also `~const`.
         ty::Adt(adt_def, args) => {

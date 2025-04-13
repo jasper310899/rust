@@ -1664,6 +1664,7 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
         /// if the type can be equated to any type.
         fn type_category(tcx: TyCtxt<'_>, t: Ty<'_>) -> Option<u32> {
             match t.kind() {
+                ty::Splat(_) => todo!(),
                 ty::Bool => Some(0),
                 ty::Char => Some(1),
                 ty::Str => Some(2),

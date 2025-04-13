@@ -167,6 +167,7 @@ impl<'tcx> Ty<'tcx> {
 
     pub fn prefix_string(self, tcx: TyCtxt<'_>) -> Cow<'static, str> {
         match *self.kind() {
+            ty::Splat(_) => todo!(),
             ty::Infer(_)
             | ty::Error(_)
             | ty::Bool

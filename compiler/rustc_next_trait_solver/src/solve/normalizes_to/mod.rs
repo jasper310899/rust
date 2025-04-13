@@ -564,6 +564,7 @@ where
         let metadata_def_id = cx.require_lang_item(TraitSolverLangItem::Metadata);
         assert_eq!(metadata_def_id, goal.predicate.def_id());
         let metadata_ty = match goal.predicate.self_ty().kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(..)
@@ -819,6 +820,7 @@ where
     ) -> Result<Candidate<I>, NoSolution> {
         let self_ty = goal.predicate.self_ty();
         let discriminant_ty = match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(..)
@@ -878,6 +880,7 @@ where
     ) -> Result<Candidate<I>, NoSolution> {
         let self_ty = goal.predicate.self_ty();
         let async_destructor_ty = match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(..)

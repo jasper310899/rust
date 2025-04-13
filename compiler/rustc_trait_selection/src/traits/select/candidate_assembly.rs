@@ -620,6 +620,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
 
             let self_ty = obligation.self_ty().skip_binder();
             match self_ty.kind() {
+                ty::Splat(_) => todo!(),
                 // Fast path to avoid evaluating an obligation that trivially holds.
                 // There may be more bounds, but these are checked by the regular path.
                 ty::FnPtr(..) => return false,
@@ -711,6 +712,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
 
         if self.tcx().trait_is_auto(def_id) {
             match *self_ty.kind() {
+                ty::Splat(_) => todo!(),
                 ty::Dynamic(..) => {
                     // For object types, we don't know what the closed
                     // over types are. This means we conservatively
@@ -1122,6 +1124,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
     ) {
         let self_ty = self.infcx.shallow_resolve(obligation.self_ty().skip_binder());
         match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Tuple(_) => {
                 candidates.vec.push(BuiltinCandidate { has_nested: false });
             }
@@ -1167,6 +1170,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
         let self_ty = self.infcx.resolve_vars_if_possible(obligation.self_ty());
 
         match self_ty.skip_binder().kind() {
+            ty::Splat(_) => todo!(),
             ty::FnPtr(..) => candidates.vec.push(BuiltinCandidate { has_nested: false }),
             ty::Bool
             | ty::Char
@@ -1213,6 +1217,7 @@ impl<'cx, 'tcx> SelectionContext<'cx, 'tcx> {
         candidates: &mut SelectionCandidateSet<'tcx>,
     ) {
         match obligation.predicate.self_ty().skip_binder().kind() {
+            ty::Splat(_) => todo!(),
             ty::Ref(..)
             | ty::Adt(..)
             | ty::Tuple(_)

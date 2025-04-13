@@ -3521,6 +3521,8 @@ pub enum TyKind<'hir, Unambig = ()> {
     Never,
     /// A tuple (`(A, B, C, D, ...)`).
     Tup(&'hir [Ty<'hir>]),
+    
+    Splat(&'hir Ty<'hir>),
     /// A path to a type definition (`module::module::...::Type`), or an
     /// associated type (e.g., `<Vec<T> as Trait>::Type` or `<T>::Target`).
     ///

@@ -315,6 +315,7 @@ impl<'a, D: SolverDelegate<Interner = I>, I: Interner> Canonicalizer<'a, D, I> {
 
     fn cached_fold_ty(&mut self, t: I::Ty) -> I::Ty {
         let kind = match t.kind() {
+            ty::Splat(_) => todo!(),
             ty::Infer(i) => match i {
                 ty::TyVar(vid) => {
                     assert_eq!(

@@ -963,7 +963,7 @@ pub fn walk_ty<'v, V: Visitor<'v>>(visitor: &mut V, typ: &'v Ty<'v, AmbigArg>) -
     try_visit!(visitor.visit_id(typ.hir_id));
 
     match typ.kind {
-        TyKind::Slice(ref ty) => try_visit!(visitor.visit_ty_unambig(ty)),
+        TyKind::Slice(ref ty) | TyKind::Splat(ref ty) => try_visit!(visitor.visit_ty_unambig(ty)),
         TyKind::Ptr(ref mutable_type) => try_visit!(visitor.visit_ty_unambig(mutable_type.ty)),
         TyKind::Ref(ref lifetime, ref mutable_type) => {
             try_visit!(visitor.visit_lifetime(lifetime));

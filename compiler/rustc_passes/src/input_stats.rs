@@ -376,6 +376,7 @@ impl<'v> hir_visit::Visitor<'v> for StatCollector<'v> {
             [
                 InferDelegation,
                 Slice,
+                Splat,
                 Array,
                 Ptr,
                 Ref,
@@ -643,6 +644,7 @@ impl<'v> ast_visit::Visitor<'v> for StatCollector<'v> {
             (self, t, t.kind, None, ast, Ty, TyKind),
             [
                 Slice,
+                Splat,
                 Array,
                 Ptr,
                 Ref,

@@ -23,6 +23,7 @@ impl<'tcx> Printer<'tcx> for AbsolutePathPrinter<'tcx> {
 
     fn print_type(&mut self, ty: Ty<'tcx>) -> Result<(), PrintError> {
         match *ty.kind() {
+            ty::Splat(_) => todo!(),
             // Types without identity.
             ty::Bool
             | ty::Char

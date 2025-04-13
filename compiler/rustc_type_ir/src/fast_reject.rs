@@ -114,6 +114,7 @@ pub fn simplify_type<I: Interner>(
     treat_params: TreatParams,
 ) -> Option<SimplifiedType<I::DefId>> {
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         ty::Bool => Some(SimplifiedType::Bool),
         ty::Char => Some(SimplifiedType::Char),
         ty::Int(int_type) => Some(SimplifiedType::Int(int_type)),
@@ -261,6 +262,7 @@ impl<I: Interner, const INSTANTIATE_LHS_WITH_INFER: bool, const INSTANTIATE_RHS_
 
     fn types_may_unify_inner(self, lhs: I::Ty, rhs: I::Ty, depth: usize) -> bool {
         match rhs.kind() {
+            ty::Splat(_) => todo!(),
             // Start by checking whether the `rhs` type may unify with
             // pretty much everything. Just return `true` in that case.
             ty::Param(_) => {
@@ -314,6 +316,7 @@ impl<I: Interner, const INSTANTIATE_LHS_WITH_INFER: bool, const INSTANTIATE_RHS_
 
         // For purely rigid types, use structural equivalence.
         match lhs.kind() {
+            ty::Splat(_) => todo!(),
             ty::Ref(_, lhs_ty, lhs_mutbl) => match rhs.kind() {
                 ty::Ref(_, rhs_ty, rhs_mutbl) => {
                     lhs_mutbl == rhs_mutbl && self.types_may_unify_inner(lhs_ty, rhs_ty, depth)

@@ -995,6 +995,7 @@ fn assemble_candidates_from_impls<'cx, 'tcx>(
                     }
                 } else if tcx.is_lang_item(trait_ref.def_id, LangItem::DiscriminantKind) {
                     match self_ty.kind() {
+                        ty::Splat(_) => todo!(),
                         ty::Bool
                         | ty::Char
                         | ty::Int(_)
@@ -1034,6 +1035,7 @@ fn assemble_candidates_from_impls<'cx, 'tcx>(
                     }
                 } else if tcx.is_lang_item(trait_ref.def_id, LangItem::AsyncDestruct) {
                     match self_ty.kind() {
+                        ty::Splat(_) => todo!(),
                         ty::Bool
                         | ty::Char
                         | ty::Int(_)
@@ -1088,6 +1090,7 @@ fn assemble_candidates_from_impls<'cx, 'tcx>(
                     );
 
                     match tail.kind() {
+                        ty::Splat(_) => todo!(),
                         ty::Bool
                         | ty::Char
                         | ty::Int(_)

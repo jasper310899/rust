@@ -17,6 +17,7 @@ use tracing::instrument;
 #[instrument(level = "debug", skip(tcx), ret)]
 fn sized_constraint_for_ty<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> Option<Ty<'tcx>> {
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         // these are always sized
         ty::Bool
         | ty::Char
@@ -337,6 +338,7 @@ fn impl_self_is_guaranteed_unsized<'tcx>(tcx: TyCtxt<'tcx>, impl_def_id: DefId) 
     );
 
     match tail.kind() {
+        ty::Splat(_) => todo!(),
         ty::Dynamic(_, _, ty::Dyn) | ty::Slice(_) | ty::Str => true,
         ty::Bool
         | ty::Char

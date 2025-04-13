@@ -25,6 +25,7 @@ use crate::traits::{FromSolverError, Normalized, ObligationCause, ObligationCtxt
 // FIXME(@lcnr): remove this module and move this function somewhere else.
 pub fn trivial_dropck_outlives<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> bool {
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         // None of these types have a destructor and hence they do not
         // require anything in particular to outlive the dtor's
         // execution.
@@ -248,6 +249,7 @@ pub fn dtorck_constraint_for_ty_inner<'tcx>(
     }
 
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         ty::Bool
         | ty::Char
         | ty::Int(_)

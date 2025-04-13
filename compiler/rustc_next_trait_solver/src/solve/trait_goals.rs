@@ -647,6 +647,7 @@ where
         ecx.probe_builtin_trait_candidate(BuiltinImplSource::Misc).enter(|ecx| {
             let ty = goal.predicate.self_ty();
             match ty.kind() {
+                ty::Splat(_) => todo!(),
                 // `&mut T` and `&T` always implement `BikeshedGuaranteedNoDrop`.
                 ty::Ref(..) => {}
                 // `ManuallyDrop<T>` always implements `BikeshedGuaranteedNoDrop`.
@@ -1107,6 +1108,7 @@ where
         };
 
         match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             // Stall int and float vars until they are resolved to a concrete
             // numerical type. That's because the check for impls below treats
             // int vars as matching any impl. Even if we filtered such impls,

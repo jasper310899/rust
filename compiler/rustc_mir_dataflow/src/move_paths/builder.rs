@@ -133,6 +133,7 @@ impl<'a, 'tcx, F: Fn(Ty<'tcx>) -> bool> MoveDataBuilder<'a, 'tcx, F> {
             }
             match elem {
                 ProjectionElem::Deref => match place_ty.kind() {
+                    ty::Splat(_) => todo!(),
                     ty::Ref(..) | ty::RawPtr(..) => {
                         return MovePathResult::Error;
                     }
@@ -171,6 +172,7 @@ impl<'a, 'tcx, F: Fn(Ty<'tcx>) -> bool> MoveDataBuilder<'a, 'tcx, F> {
                     }
                 },
                 ProjectionElem::Field(_, _) => match place_ty.kind() {
+                    ty::Splat(_) => todo!(),
                     ty::Adt(adt, _) => {
                         if adt.has_dtor(tcx) {
                             return MovePathResult::Error;

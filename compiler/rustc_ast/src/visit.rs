@@ -554,7 +554,7 @@ pub fn walk_pat_field<'a, V: Visitor<'a>>(visitor: &mut V, fp: &'a PatField) -> 
 pub fn walk_ty<'a, V: Visitor<'a>>(visitor: &mut V, typ: &'a Ty) -> V::Result {
     let Ty { id, kind, span: _, tokens: _ } = typ;
     match kind {
-        TyKind::Slice(ty) | TyKind::Paren(ty) => try_visit!(visitor.visit_ty(ty)),
+        TyKind::Slice(ty) | TyKind::Paren(ty) | TyKind::Splat(ty) => try_visit!(visitor.visit_ty(ty)),
         TyKind::Ptr(MutTy { ty, mutbl: _ }) => try_visit!(visitor.visit_ty(ty)),
         TyKind::Ref(opt_lifetime, MutTy { ty, mutbl: _ })
         | TyKind::PinnedRef(opt_lifetime, MutTy { ty, mutbl: _ }) => {

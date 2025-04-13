@@ -1215,6 +1215,7 @@ impl<'tcx> Ty<'tcx> {
     /// `false` means nothing -- could be `Freeze`, might not be.
     pub fn is_trivially_freeze(self) -> bool {
         match self.kind() {
+            ty::Splat(_) => todo!(),
             ty::Int(_)
             | ty::Uint(_)
             | ty::Float(_)
@@ -1256,6 +1257,7 @@ impl<'tcx> Ty<'tcx> {
     /// `false` means nothing -- could be `Unpin`, might not be.
     fn is_trivially_unpin(self) -> bool {
         match self.kind() {
+            ty::Splat(_) => todo!(),
             ty::Int(_)
             | ty::Uint(_)
             | ty::Float(_)
@@ -1306,6 +1308,7 @@ impl<'tcx> Ty<'tcx> {
     // instead.
     pub fn async_drop_glue_morphology(self, tcx: TyCtxt<'tcx>) -> AsyncDropGlueMorphology {
         match self.kind() {
+            ty::Splat(_) => todo!(),
             ty::Int(_)
             | ty::Uint(_)
             | ty::Float(_)
@@ -1488,6 +1491,7 @@ impl<'tcx> Ty<'tcx> {
     #[inline]
     pub fn is_structural_eq_shallow(self, tcx: TyCtxt<'tcx>) -> bool {
         match self.kind() {
+            ty::Splat(_) => todo!(),
             // Look for an impl of `StructuralPartialEq`.
             ty::Adt(..) => tcx.has_structural_eq_impl(self),
 
@@ -1575,6 +1579,7 @@ pub fn needs_drop_components_with_async<'tcx>(
     asyncness: Asyncness,
 ) -> Result<SmallVec<[Ty<'tcx>; 2]>, AlwaysRequiresDrop> {
     match *ty.kind() {
+        ty::Splat(_) => todo!(),
         ty::Infer(ty::FreshIntTy(_))
         | ty::Infer(ty::FreshFloatTy(_))
         | ty::Bool

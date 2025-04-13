@@ -58,6 +58,7 @@ fn push_debuginfo_type_name<'tcx>(
     let cpp_like_debuginfo = cpp_like_debuginfo(tcx);
 
     match *t.kind() {
+        ty::Splat(_) => todo!(),
         ty::Bool => output.push_str("bool"),
         ty::Char => output.push_str("char"),
         ty::Str => {

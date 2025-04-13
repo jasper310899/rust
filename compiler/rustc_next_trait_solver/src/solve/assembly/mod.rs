@@ -529,6 +529,7 @@ where
         consider_self_bounds: AliasBoundKind,
     ) {
         let (kind, alias_ty) = match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(_)
@@ -643,6 +644,7 @@ where
 
         let self_ty = goal.predicate.self_ty();
         let bounds = match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(_)

@@ -330,6 +330,7 @@ where
         };
 
         let result = match ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(..)

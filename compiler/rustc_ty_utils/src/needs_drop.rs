@@ -172,6 +172,7 @@ where
 
             for component in components {
                 match *component.kind() {
+                    ty::Splat(_) => todo!(),
                     // The information required to determine whether a coroutine has drop is
                     // computed on MIR, while this very method is used to build MIR.
                     // To avoid cycles, we consider that coroutines always require drop.

@@ -140,6 +140,7 @@ pub(crate) fn orphan_check_impl(
         // Exhaustive match considering that this logic is essential for
         // soundness.
         let (local_impl, nonlocal_impl) = match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             // struct Struct<T>;
             // impl AutoTrait for Struct<Foo> {}
             ty::Adt(self_def, _) => (

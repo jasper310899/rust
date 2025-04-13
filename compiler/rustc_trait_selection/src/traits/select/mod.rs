@@ -2072,6 +2072,7 @@ impl<'tcx> SelectionContext<'_, 'tcx> {
         let self_ty = self.infcx.shallow_resolve(obligation.predicate.skip_binder().self_ty());
 
         match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Infer(ty::IntVar(_) | ty::FloatVar(_))
             | ty::Uint(_)
             | ty::Int(_)
@@ -2138,6 +2139,7 @@ impl<'tcx> SelectionContext<'_, 'tcx> {
         use self::BuiltinImplConditions::{Ambiguous, None, Where};
 
         match *self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::FnDef(..) | ty::FnPtr(..) | ty::Error(_) => Where(ty::Binder::dummy(Vec::new())),
 
             ty::Uint(_)
@@ -2290,6 +2292,7 @@ impl<'tcx> SelectionContext<'_, 'tcx> {
         t: ty::Binder<'tcx, Ty<'tcx>>,
     ) -> Result<ty::Binder<'tcx, Vec<Ty<'tcx>>>, SelectionError<'tcx>> {
         Ok(match *t.skip_binder().kind() {
+            ty::Splat(_) => todo!(),
             ty::Uint(_)
             | ty::Int(_)
             | ty::Bool

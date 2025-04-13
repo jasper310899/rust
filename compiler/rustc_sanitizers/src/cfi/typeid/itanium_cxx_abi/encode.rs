@@ -327,6 +327,7 @@ pub(crate) fn encode_ty<'tcx>(
     let mut typeid = String::new();
 
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         // Primitive types
 
         // Rust's bool has the same layout as C17's _Bool, that is, its size and alignment are

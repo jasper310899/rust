@@ -325,6 +325,7 @@ impl<'p, 'tcx: 'p> RustcPatCtxt<'p, 'tcx> {
         // This determines the set of all possible constructors for the type `ty`. For numbers,
         // arrays and slices we use ranges and variable-length slices when appropriate.
         Ok(match ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool => ConstructorSet::Bool,
             ty::Char => {
                 // The valid Unicode Scalar Value ranges.

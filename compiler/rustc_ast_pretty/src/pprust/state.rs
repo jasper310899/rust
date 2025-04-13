@@ -1185,6 +1185,10 @@ impl<'a> State<'a> {
         self.maybe_print_comment(ty.span.lo());
         self.ibox(0);
         match &ty.kind {
+            ast::TyKind::Splat(ty) => {
+                self.word("...");
+                self.print_type(ty);
+            }
             ast::TyKind::Slice(ty) => {
                 self.word("[");
                 self.print_type(ty);

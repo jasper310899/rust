@@ -488,6 +488,7 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
         };
 
         match self_ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(_)
@@ -2446,6 +2447,7 @@ impl<'tcx> TyCtxt<'tcx> {
                 CoroutineWitness,
                 Dynamic,
                 Closure,
+                Splat,
                 CoroutineClosure,
                 Tuple,
                 Bound,

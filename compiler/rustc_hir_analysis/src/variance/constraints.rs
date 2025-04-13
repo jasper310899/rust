@@ -225,6 +225,7 @@ impl<'a, 'tcx> ConstraintContext<'a, 'tcx> {
         debug!("add_constraints_from_ty(ty={:?}, variance={:?})", ty, variance);
 
         match *ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(_)
