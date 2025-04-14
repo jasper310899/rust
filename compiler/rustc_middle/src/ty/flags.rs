@@ -88,8 +88,8 @@ impl FlagComputation {
     #[allow(rustc::usage_of_ty_tykind)]
     fn add_kind(&mut self, kind: &ty::TyKind<'_>) {
         match kind {
-            &ty::Splat(_) => todo!(),
-            &ty::Bool
+            &ty::Splat(_)
+            | &ty::Bool
             | &ty::Char
             | &ty::Int(_)
             | &ty::Float(_)

@@ -1,5 +1,4 @@
 //@ run-pass
-//@ -Z treat-err-as-bug=1
 
 //#![feature(min_variadics)]
 

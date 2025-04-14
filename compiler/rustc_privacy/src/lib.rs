@@ -185,6 +185,7 @@ where
         // GenericArgs are not visited here because they are visited below
         // in `super_visit_with`.
         match *ty.kind() {
+            ty::Splat(_) => todo!(),
             ty::Adt(ty::AdtDef(Interned(&ty::AdtDefData { did: def_id, .. }, _)), ..)
             | ty::Foreign(def_id)
             | ty::FnDef(def_id, ..)

@@ -442,7 +442,7 @@ impl<'tcx> TypeSuperFoldable<TyCtxt<'tcx>> for Ty<'tcx> {
 impl<'tcx> TypeSuperVisitable<TyCtxt<'tcx>> for Ty<'tcx> {
     fn super_visit_with<V: TypeVisitor<TyCtxt<'tcx>>>(&self, visitor: &mut V) -> V::Result {
         match self.kind() {
-            ty::Splat(_) => todo!(),
+            ty::Splat(ty) => ty.visit_with(visitor),
             ty::RawPtr(ty, _mutbl) => ty.visit_with(visitor),
             ty::Array(typ, sz) => {
                 try_visit!(typ.visit_with(visitor));

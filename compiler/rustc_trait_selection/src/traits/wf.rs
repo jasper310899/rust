@@ -662,7 +662,6 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
         let tcx = self.tcx();
 
         match *t.kind() {
-            ty::Splat(_) => todo!(),
             ty::Bool
             | ty::Char
             | ty::Int(..)
@@ -799,6 +798,9 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
                         ))),
                     ));
                 }
+            }
+            ty::Splat(ty) => {
+                self.require_sized(ty, ObligationCauseCode::TupleElem);
             }
 
             ty::Coroutine(did, args, ..) => {

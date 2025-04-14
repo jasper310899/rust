@@ -880,6 +880,7 @@ fn try_write_constant<'tcx>(
     }
 
     match ty.kind() {
+        ty::Splat(_) => todo!(),
         // ZSTs. Nothing to do.
         ty::FnDef(..) => {}
 

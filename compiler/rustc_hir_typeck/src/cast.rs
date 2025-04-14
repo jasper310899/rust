@@ -102,6 +102,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let t = self.try_structurally_resolve_type(span, t);
 
         Ok(match *t.kind() {
+            ty::Splat(_) => todo!(),
             ty::Slice(_) | ty::Str => Some(PointerKind::Length),
             ty::Dynamic(tty, _, ty::Dyn) => Some(PointerKind::VTable(tty)),
             ty::Adt(def, args) if def.is_struct() => match def.non_enum_variant().tail_opt() {

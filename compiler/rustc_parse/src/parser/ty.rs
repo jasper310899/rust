@@ -16,7 +16,7 @@ use crate::errors::{
     self, DynAfterMut, ExpectedFnPathFoundFnKeyword, ExpectedMutOrConstInRawPointerType,
     FnPointerCannotBeAsync, FnPointerCannotBeConst, FnPtrWithGenerics, FnPtrWithGenericsSugg,
     HelpUseLatestEdition, InvalidDynKeyword, LifetimeAfterMut, NeedPlusAfterTraitObjectLifetime,
-    NestedCVariadicType, ReturnTypesUseThinArrow,
+    ReturnTypesUseThinArrow,
 };
 use crate::{exp, maybe_recover_from_interpolated_ty_qpath};
 
@@ -258,9 +258,7 @@ impl<'a> Parser<'a> {
 
         let lo = self.token.span;
         let mut impl_dyn_multi = false;
-        let kind = if self.eat(exp!(DotDotDot)) {
-            self.parse_ty_splat()?
-        } else if self.check(exp!(OpenParen)) {
+        let kind = if self.check(exp!(OpenParen)) {
             self.parse_ty_tuple_or_parens(lo, allow_plus)?
         } else if self.eat(exp!(Bang)) {
             // Never type `!`
@@ -349,11 +347,7 @@ impl<'a> Parser<'a> {
             match allow_c_variadic {
                 AllowCVariadic::Yes => TyKind::CVarArgs,
                 AllowCVariadic::No => {
-                    // FIXME(c_variadic): Should we just allow `...` syntactically
-                    // anywhere in a type and use semantic restrictions instead?
-                    // NOTE: This may regress certain MBE calls if done incorrectly.
-                    let guar = self.dcx().emit_err(NestedCVariadicType { span: lo });
-                    TyKind::Err(guar)
+                    self.parse_ty_splat()?
                 }
             }
         } else if self.check_keyword(exp!(Unsafe))

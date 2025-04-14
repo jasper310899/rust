@@ -1807,6 +1807,7 @@ impl<'a, 'tcx> MirBorrowckCtxt<'a, '_, 'tcx> {
         for (place_ref, elem) in place.iter_projections() {
             match elem {
                 ProjectionElem::Deref => match place_ty.ty.kind() {
+                    ty::Splat(_) => todo!(),
                     ty::Ref(..) | ty::RawPtr(..) => {
                         self.move_errors.push(MoveError::new(
                             place,
@@ -1852,6 +1853,7 @@ impl<'a, 'tcx> MirBorrowckCtxt<'a, '_, 'tcx> {
                     }
                 },
                 ProjectionElem::Field(_, _) => match place_ty.ty.kind() {
+                    ty::Splat(_) => todo!(),
                     ty::Adt(adt, _) => {
                         if adt.has_dtor(tcx) {
                             self.move_errors.push(MoveError::new(
