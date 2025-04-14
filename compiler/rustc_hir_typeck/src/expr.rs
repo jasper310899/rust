@@ -5,6 +5,7 @@
 //!
 //! See [`rustc_hir_analysis::check`] for more context on type checking in general.
 
+use itertools::Itertools;
 use rustc_abi::{FIRST_VARIANT, FieldIdx};
 use rustc_data_structures::fx::{FxHashMap, FxHashSet};
 use rustc_data_structures::stack::ensure_sufficient_stack;
@@ -1933,12 +1934,28 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let flds = expected.only_has_type(self).and_then(|ty| {
             let ty = self.try_structurally_resolve_type(expr.span, ty);
             match ty.kind() {
-                ty::Tuple(flds) => Some(&flds[..]),
+                ty::Tuple(flds) => Some(flds.iter().map(|fld| {
+                    match fld.kind() {
+                        ty::Splat(inner_flds) => {
+                            match inner_flds.kind() {
+                                ty::Tuple(tup) => {
+                                    tup.to_vec()
+                                },
+                                _ => todo!()
+                            }
+                        },
+                        _ => {
+                            [fld].to_vec()
+                        }
+                    }
+                }).flatten().collect_vec()),
                 _ => None,
             }
         });
 
-        let elt_ts_iter = elts.iter().enumerate().map(|(i, e)| match flds {
+
+
+        let elt_ts_iter = elts.iter().enumerate().map(|(i, e)| match &flds {
             Some(fs) if i < fs.len() => {
                 let ety = fs[i];
                 self.check_expr_coercible_to_type(e, ety, None);
