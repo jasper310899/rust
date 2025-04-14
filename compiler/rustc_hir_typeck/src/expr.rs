@@ -1934,21 +1934,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         let flds = expected.only_has_type(self).and_then(|ty| {
             let ty = self.try_structurally_resolve_type(expr.span, ty);
             match ty.kind() {
-                ty::Tuple(flds) => Some(flds.iter().map(|fld| {
-                    match fld.kind() {
-                        ty::Splat(inner_flds) => {
-                            match inner_flds.kind() {
-                                ty::Tuple(tup) => {
-                                    tup.to_vec()
-                                },
-                                _ => todo!()
-                            }
-                        },
-                        _ => {
-                            [fld].to_vec()
-                        }
-                    }
-                }).flatten().collect_vec()),
+                ty::Tuple(flds) => Some(flds.flattened().collect_vec()),
                 _ => None,
             }
         });

@@ -2048,6 +2048,24 @@ impl<'tcx> rustc_type_ir::inherent::Tys<TyCtxt<'tcx>> for &'tcx ty::List<Ty<'tcx
     fn output(self) -> Ty<'tcx> {
         *self.split_last().unwrap().0
     }
+    
+    fn flattened(self) -> impl Iterator<Item = Ty<'tcx>> {
+        self.iter().map(|fld| {
+            match fld.kind() {
+                ty::Splat(inner_flds) => {
+                    match inner_flds.kind() {
+                        ty::Tuple(tup) => {
+                            tup.to_vec()
+                        },
+                        _ => todo!()
+                    }
+                },
+                _ => {
+                    [fld].to_vec()
+                }
+            }
+        }).flatten()
+    }
 }
 
 // Some types are used a lot. Make sure they don't unintentionally get bigger.
