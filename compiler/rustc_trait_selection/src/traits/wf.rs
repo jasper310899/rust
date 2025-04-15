@@ -800,8 +800,8 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
                     ));
                 }
             }
-            ty::Splat(_ty) => {
-                bug!("Splat should have been flattened at this point.")
+            ty::Splat(_) => {
+                
             }
 
             ty::Coroutine(did, args, ..) => {
