@@ -2080,6 +2080,14 @@ impl<'tcx, I: Iterator<Item = Ty<'tcx>>> FlattenSplatRecursive<'tcx> for I {
 
                             tys
                         }
+                        ty::Ref(region, ty, mutbl) => {
+                            match *ty.kind() {
+                                ty::Tuple(tup) => {
+                                    tup.iter().flatten_splat(tcx).map(|ty| Ty::new_ref(tcx, *region, ty, *mutbl)).collect::<Vec<_>>()
+                                },
+                                _ => todo!(),
+                            }
+                        }
                         _ => todo!()
                     }
                 },
