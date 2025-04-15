@@ -2058,14 +2058,17 @@ impl<'tcx> rustc_type_ir::inherent::Tys<TyCtxt<'tcx>> for &'tcx ty::List<Ty<'tcx
         self.flattened(tcx)
     }
 }
-impl<'tcx> ty::List<Ty<'tcx>> {
-    pub fn flattened(&self, tcx: TyCtxt<'tcx>) -> impl Iterator<Item = Ty<'tcx>> {
-        self.iter().map(move |fld| {
+pub trait FlattenSplatRecursive<'tcx> {
+    fn flatten_splat(self, tcx: TyCtxt<'tcx>) -> impl Iterator<Item = Ty<'tcx>>;
+}
+impl<'tcx, I: Iterator<Item = Ty<'tcx>>> FlattenSplatRecursive<'tcx> for I {
+    fn flatten_splat(self, tcx: TyCtxt<'tcx>) -> impl Iterator<Item = Ty<'tcx>> {
+        self.map(move |fld| {
             match fld.kind() {
                 ty::Splat(inner_flds) => {
                     match inner_flds.kind() {
                         ty::Tuple(tup) => {
-                            tup.to_vec()
+                            tup.iter().flatten_splat(tcx).collect::<Vec<_>>()
                         },
                         ty::Array(ty, n) => {
                             let mut tys = vec![];
@@ -2085,6 +2088,11 @@ impl<'tcx> ty::List<Ty<'tcx>> {
                 }
             }
         }).flatten()
+    }
+}
+impl<'tcx> ty::List<Ty<'tcx>> {
+    pub fn flattened(&self, tcx: TyCtxt<'tcx>) -> impl Iterator<Item = Ty<'tcx>> {
+        self.iter().flatten_splat(tcx)
     }
 }
 
