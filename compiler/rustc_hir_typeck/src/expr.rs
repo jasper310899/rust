@@ -1954,11 +1954,14 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             _ => self.check_expr_with_expectation(e, NoExpectation),
         });
         let elt_ts_iter = elt_ts_iter.map(|ety| match ety.kind() {
-            ty::Tuple(tys) => {
-                rustc_middle::ty::inherent::Tys::flattened(*tys).collect_vec()
+            ty::Splat(ty) => {
+                match ty.kind() {
+                    ty::Tuple(tys) => tys.to_vec(),
+                    _ => todo!(),
+                }
             },
             _ => [ety].to_vec()
-        });
+        }).flatten();
         let tuple = Ty::new_tup_from_iter(self.tcx, elt_ts_iter);
         if let Err(guar) = tuple.error_reported() {
             Ty::new_error(self.tcx, guar)
