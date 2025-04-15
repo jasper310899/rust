@@ -1003,6 +1003,11 @@ impl<'tcx> rustc_type_ir::inherent::Ty<TyCtxt<'tcx>> for Ty<'tcx> {
         Ty::new_tup_from_iter(interner, iter)
     }
 
+    fn flatten_tup(interner: TyCtxt<'tcx>, tup: &'tcx ty::List<Ty<'tcx>>) -> Self
+    {
+        Ty::new_tup_from_iter(interner, rustc_type_ir::inherent::Tys::flattened(tup))
+    }
+
     fn tuple_fields(self) -> &'tcx ty::List<Ty<'tcx>> {
         self.tuple_fields()
     }
@@ -1957,7 +1962,7 @@ impl<'tcx> Ty<'tcx> {
 
             // A 100-tuple isn't "trivial", so doing this only for reasonable sizes.
             ty::Tuple(field_tys) => {
-                field_tys.len() <= 3 && field_tys.iter().all(Self::is_trivially_pure_clone_copy)
+                rustc_type_ir::inherent::Tys::flattened(*field_tys).count() <= 3 && rustc_type_ir::inherent::Tys::flattened(*field_tys).all(Self::is_trivially_pure_clone_copy)
             }
 
             ty::Pat(ty, _) => ty.is_trivially_pure_clone_copy(),

@@ -1932,9 +1932,13 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         expr: &'tcx hir::Expr<'tcx>,
     ) -> Ty<'tcx> {
         let flds = expected.only_has_type(self).and_then(|ty| {
+            let ty = match ty.kind() {
+                ty::Tuple(flds) => rustc_middle::ty::inherent::Ty::flatten_tup(self.tcx(), flds),
+                _ => return None,
+            };
             let ty = self.try_structurally_resolve_type(expr.span, ty);
             match ty.kind() {
-                ty::Tuple(flds) => Some(flds.flattened().collect_vec()),
+                ty::Tuple(flds) => Some(rustc_middle::ty::inherent::Tys::flattened(*flds).collect_vec()),
                 _ => None,
             }
         });
@@ -1948,6 +1952,12 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 ety
             }
             _ => self.check_expr_with_expectation(e, NoExpectation),
+        });
+        let elt_ts_iter = elt_ts_iter.map(|ety| match ety.kind() {
+            ty::Tuple(tys) => {
+                rustc_middle::ty::inherent::Tys::flattened(*tys).collect_vec()
+            },
+            _ => [ety].to_vec()
         });
         let tuple = Ty::new_tup_from_iter(self.tcx, elt_ts_iter);
         if let Err(guar) = tuple.error_reported() {
@@ -2907,13 +2917,13 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 ty::Tuple(tys) => {
                     if let Ok(index) = field.as_str().parse::<usize>() {
                         if field.name == sym::integer(index) {
-                            if let Some(&field_ty) = tys.get(index) {
+                            if let Some(field_ty) = tys.get(index) {
                                 let adjustments = self.adjust_steps(&autoderef);
                                 self.apply_adjustments(base, adjustments);
                                 self.register_predicates(autoderef.into_obligations());
 
                                 self.write_field_index(expr.hir_id, FieldIdx::from_usize(index));
-                                return field_ty;
+                                return *field_ty;
                             }
                         }
                     }
@@ -3977,19 +3987,19 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                     if let Ok(index) = field.as_str().parse::<usize>()
                         && field.name == sym::integer(index)
                     {
-                        if let Some(&field_ty) = tys.get(index) {
+                        if let Some(field_ty) = tys.get(index) {
                             if self.tcx.features().offset_of_slice() {
-                                self.require_type_has_static_alignment(field_ty, expr.span);
+                                self.require_type_has_static_alignment(*field_ty, expr.span);
                             } else {
                                 self.require_type_is_sized(
-                                    field_ty,
+                                    *field_ty,
                                     expr.span,
                                     ObligationCauseCode::Misc,
                                 );
                             }
 
                             field_indices.push((FIRST_VARIANT, index.into()));
-                            current_container = field_ty;
+                            current_container = *field_ty;
 
                             continue;
                         }

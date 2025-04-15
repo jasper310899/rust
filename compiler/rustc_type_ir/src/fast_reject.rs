@@ -114,7 +114,6 @@ pub fn simplify_type<I: Interner>(
     treat_params: TreatParams,
 ) -> Option<SimplifiedType<I::DefId>> {
     match ty.kind() {
-        ty::Splat(_) => todo!(),
         ty::Bool => Some(SimplifiedType::Bool),
         ty::Char => Some(SimplifiedType::Char),
         ty::Int(int_type) => Some(SimplifiedType::Int(int_type)),
@@ -159,7 +158,7 @@ pub fn simplify_type<I: Interner>(
         },
         ty::Foreign(def_id) => Some(SimplifiedType::Foreign(def_id)),
         ty::Error(_) => Some(SimplifiedType::Error),
-        ty::Bound(..) | ty::Infer(_) => None,
+        ty::Bound(..) | ty::Infer(_) | ty::Splat(_) => None,
     }
 }
 

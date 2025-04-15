@@ -2072,7 +2072,6 @@ impl<'tcx> SelectionContext<'_, 'tcx> {
         let self_ty = self.infcx.shallow_resolve(obligation.predicate.skip_binder().self_ty());
 
         match self_ty.kind() {
-            ty::Splat(_) => todo!(),
             ty::Infer(ty::IntVar(_) | ty::FloatVar(_))
             | ty::Uint(_)
             | ty::Int(_)
@@ -2117,7 +2116,7 @@ impl<'tcx> SelectionContext<'_, 'tcx> {
             // FIXME(unsafe_binders): This binder needs to be squashed
             ty::UnsafeBinder(binder_ty) => Where(binder_ty.map_bound(|ty| vec![ty])),
 
-            ty::Alias(..) | ty::Param(_) | ty::Placeholder(..) => None,
+            ty::Alias(..) | ty::Param(_) | ty::Placeholder(..) | ty::Splat(_) => None,
             ty::Infer(ty::TyVar(_)) => Ambiguous,
 
             // We can make this an ICE if/once we actually instantiate the trait obligation eagerly.

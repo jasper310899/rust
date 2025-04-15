@@ -70,6 +70,8 @@ pub trait Ty<I: Interner<Ty = Self>>:
         )
     }
 
+    fn flatten_tup(interner: I, tup: I::Tys) -> Self;
+
     fn new_error(interner: I, guar: I::ErrorGuaranteed) -> Self;
 
     fn new_adt(interner: I, adt_def: I::AdtDef, args: I::GenericArgs) -> Self;

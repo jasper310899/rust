@@ -41,7 +41,7 @@ fn sized_constraint_for_ty<'tcx>(tcx: TyCtxt<'tcx>, ty: Ty<'tcx>) -> Option<Ty<'
 
         ty::Pat(ty, _) => sized_constraint_for_ty(tcx, *ty),
 
-        ty::Tuple(tys) => tys.last().and_then(|&ty| sized_constraint_for_ty(tcx, ty)),
+        ty::Tuple(tys) => rustc_middle::ty::inherent::Tys::flattened(*tys).last().and_then(|ty| sized_constraint_for_ty(tcx, ty)),
 
         // recursive case
         ty::Adt(adt, args) => adt.sized_constraint(tcx).and_then(|intermediate| {

@@ -392,7 +392,6 @@ impl<'tcx> TypeSuperFoldable<TyCtxt<'tcx>> for Ty<'tcx> {
         folder: &mut F,
     ) -> Result<Self, F::Error> {
         let kind = match *self.kind() {
-            ty::Splat(_) => todo!(),
             ty::RawPtr(ty, mutbl) => ty::RawPtr(ty.try_fold_with(folder)?, mutbl),
             ty::Array(typ, sz) => ty::Array(typ.try_fold_with(folder)?, sz.try_fold_with(folder)?),
             ty::Slice(typ) => ty::Slice(typ.try_fold_with(folder)?),
@@ -427,6 +426,7 @@ impl<'tcx> TypeSuperFoldable<TyCtxt<'tcx>> for Ty<'tcx> {
             | ty::Uint(_)
             | ty::Float(_)
             | ty::Error(_)
+            | ty::Splat(_)
             | ty::Infer(_)
             | ty::Param(..)
             | ty::Bound(..)
