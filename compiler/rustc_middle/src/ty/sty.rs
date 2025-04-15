@@ -2053,8 +2053,13 @@ impl<'tcx> rustc_type_ir::inherent::Tys<TyCtxt<'tcx>> for &'tcx ty::List<Ty<'tcx
     fn output(self) -> Ty<'tcx> {
         *self.split_last().unwrap().0
     }
-    
+
     fn flattened(self) -> impl Iterator<Item = Ty<'tcx>> {
+        self.flattened()
+    }
+}
+impl<'tcx> ty::List<Ty<'tcx>> {
+    pub fn flattened(&self) -> impl Iterator<Item = Ty<'tcx>> {
         self.iter().map(|fld| {
             match fld.kind() {
                 ty::Splat(inner_flds) => {

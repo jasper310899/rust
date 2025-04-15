@@ -1,5 +1,6 @@
 use std::iter;
 
+use itertools::Itertools;
 use rustc_hir as hir;
 use rustc_hir::lang_items::LangItem;
 use rustc_infer::traits::{ObligationCauseCode, PredicateObligations};
@@ -745,7 +746,7 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
             }
 
             ty::Tuple(tys) => {
-                if let Some((_last, rest)) = tys.split_last() {
+                if let Some((_last, rest)) = tys.flattened().collect_vec().split_last() {
                     for &elem in rest {
                         self.require_sized(elem, ObligationCauseCode::TupleElem);
                     }
@@ -799,8 +800,8 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
                     ));
                 }
             }
-            ty::Splat(ty) => {
-                self.require_sized(ty, ObligationCauseCode::TupleElem);
+            ty::Splat(_ty) => {
+                bug!("Splat should have been flattened at this point.")
             }
 
             ty::Coroutine(did, args, ..) => {
