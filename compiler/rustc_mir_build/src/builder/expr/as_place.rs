@@ -680,7 +680,7 @@ impl<'a, 'tcx> Builder<'a, 'tcx> {
             ty::Slice(_elem_ty) => {
                 let ptr_or_ref = if let [PlaceElem::Deref] = place.projection[..]
                     && let local_ty = self.local_decls[place.local].ty
-                    && local_ty.is_trivially_pure_clone_copy()
+                    && local_ty.is_trivially_pure_clone_copy(self.tcx)
                 {
                     // It's extremely common that we have something that can be
                     // directly passed to `PtrMetadata`, so avoid an unnecessary

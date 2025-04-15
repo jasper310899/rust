@@ -1938,7 +1938,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             };
             let ty = self.try_structurally_resolve_type(expr.span, ty);
             match ty.kind() {
-                ty::Tuple(flds) => Some(rustc_middle::ty::inherent::Tys::flattened(*flds).collect_vec()),
+                ty::Tuple(flds) => Some(flds.flattened(self.tcx()).collect_vec()),
                 _ => None,
             }
         });

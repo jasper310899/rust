@@ -121,7 +121,7 @@ impl<'tcx> Visitor<'tcx> for CostChecker<'_, 'tcx> {
         match terminator.kind {
             TerminatorKind::Drop { ref place, unwind, .. } => {
                 let ty = place.ty(self.callee_body, tcx).ty;
-                if !ty.is_trivially_pure_clone_copy() {
+                if !ty.is_trivially_pure_clone_copy(self.tcx) {
                     self.calls += 1;
                     if let UnwindAction::Cleanup(_) = unwind {
                         self.landing_pads += 1;

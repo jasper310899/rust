@@ -1005,7 +1005,7 @@ impl<'tcx> rustc_type_ir::inherent::Ty<TyCtxt<'tcx>> for Ty<'tcx> {
 
     fn flatten_tup(interner: TyCtxt<'tcx>, tup: &'tcx ty::List<Ty<'tcx>>) -> Self
     {
-        Ty::new_tup_from_iter(interner, rustc_type_ir::inherent::Tys::flattened(tup))
+        Ty::new_tup_from_iter(interner, tup.flattened(interner))
     }
 
     fn tuple_fields(self) -> &'tcx ty::List<Ty<'tcx>> {
@@ -1942,7 +1942,7 @@ impl<'tcx> Ty<'tcx> {
     ///
     /// This is mostly useful for optimizations, as these are the types
     /// on which we can replace cloning with dereferencing.
-    pub fn is_trivially_pure_clone_copy(self) -> bool {
+    pub fn is_trivially_pure_clone_copy(self, tcx: TyCtxt<'tcx>) -> bool {
         match self.kind() {
             ty::Splat(_) => todo!(),
             ty::Bool | ty::Char | ty::Never => true,
@@ -1958,14 +1958,14 @@ impl<'tcx> Ty<'tcx> {
             // ZST which can't be named are fine.
             ty::FnDef(..) => true,
 
-            ty::Array(element_ty, _len) => element_ty.is_trivially_pure_clone_copy(),
+            ty::Array(element_ty, _len) => element_ty.is_trivially_pure_clone_copy(tcx),
 
             // A 100-tuple isn't "trivial", so doing this only for reasonable sizes.
             ty::Tuple(field_tys) => {
-                rustc_type_ir::inherent::Tys::flattened(*field_tys).count() <= 3 && rustc_type_ir::inherent::Tys::flattened(*field_tys).all(Self::is_trivially_pure_clone_copy)
+                field_tys.flattened(tcx).count() <= 3 && field_tys.flattened(tcx).all(|ty| ty.is_trivially_pure_clone_copy(tcx))
             }
 
-            ty::Pat(ty, _) => ty.is_trivially_pure_clone_copy(),
+            ty::Pat(ty, _) => ty.is_trivially_pure_clone_copy(tcx),
 
             // Sometimes traits aren't implemented for every ABI or arity,
             // because we can't be generic over everything yet.
@@ -2054,19 +2054,29 @@ impl<'tcx> rustc_type_ir::inherent::Tys<TyCtxt<'tcx>> for &'tcx ty::List<Ty<'tcx
         *self.split_last().unwrap().0
     }
 
-    fn flattened(self) -> impl Iterator<Item = Ty<'tcx>> {
-        self.flattened()
+    fn flattened(self, tcx: TyCtxt<'tcx>) -> impl Iterator<Item = Ty<'tcx>> {
+        self.flattened(tcx)
     }
 }
 impl<'tcx> ty::List<Ty<'tcx>> {
-    pub fn flattened(&self) -> impl Iterator<Item = Ty<'tcx>> {
-        self.iter().map(|fld| {
+    pub fn flattened(&self, tcx: TyCtxt<'tcx>) -> impl Iterator<Item = Ty<'tcx>> {
+        self.iter().map(move |fld| {
             match fld.kind() {
                 ty::Splat(inner_flds) => {
                     match inner_flds.kind() {
                         ty::Tuple(tup) => {
                             tup.to_vec()
                         },
+                        ty::Array(ty, n) => {
+                            let mut tys = vec![];
+
+                            for _ in 0..n.try_to_target_usize(tcx)
+                            .expect("expected monomorphic const in codegen") {
+                                tys.push(ty.clone());
+                            }
+
+                            tys
+                        }
                         _ => todo!()
                     }
                 },

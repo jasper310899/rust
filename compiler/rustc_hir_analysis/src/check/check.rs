@@ -90,7 +90,7 @@ fn allowed_union_or_unsafe_field<'tcx>(
     // impls for `Copy`. Let's short-circuit here for this validity check, since a lot of them
     // use unions. We should eventually fix all the tests to define that lang item or use
     // minicore stubs.
-    if ty.is_trivially_pure_clone_copy() {
+    if ty.is_trivially_pure_clone_copy(tcx) {
         return true;
     }
     // If `BikeshedGuaranteedNoDrop` is not defined in a `#[no_core]` test, fall back to `Copy`.

@@ -342,7 +342,6 @@ impl<'cx, 'tcx> TypeFolder<TyCtxt<'tcx>> for Canonicalizer<'cx, 'tcx> {
 
     fn fold_ty(&mut self, mut t: Ty<'tcx>) -> Ty<'tcx> {
         match *t.kind() {
-            ty::Splat(_) => todo!(),
             ty::Infer(ty::TyVar(mut vid)) => {
                 // We need to canonicalize the *root* of our ty var.
                 // This is so that our canonical response correctly reflects
@@ -436,6 +435,7 @@ impl<'cx, 'tcx> TypeFolder<TyCtxt<'tcx>> for Canonicalizer<'cx, 'tcx> {
             | ty::Str
             | ty::Error(_)
             | ty::Array(..)
+            | ty::Splat(_)
             | ty::Slice(..)
             | ty::RawPtr(..)
             | ty::Ref(..)

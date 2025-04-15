@@ -746,7 +746,7 @@ impl<'a, 'tcx> TypeVisitor<TyCtxt<'tcx>> for WfPredicates<'a, 'tcx> {
             }
 
             ty::Tuple(tys) => {
-                if let Some((_last, rest)) = tys.flattened().collect_vec().split_last() {
+                if let Some((_last, rest)) = tys.flattened(self.tcx()).collect_vec().split_last() {
                     for &elem in rest {
                         self.require_sized(elem, ObligationCauseCode::TupleElem);
                     }

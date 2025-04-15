@@ -238,7 +238,7 @@ impl<'tcx> InstSimplifyContext<'_, 'tcx> {
 
         let ty::Ref(_region, inner_ty, Mutability::Not) = *arg_ty.kind() else { return };
 
-        if !inner_ty.is_trivially_pure_clone_copy() {
+        if !inner_ty.is_trivially_pure_clone_copy(self.tcx) {
             return;
         }
 

@@ -188,7 +188,7 @@ impl<'tcx> TyCtxt<'tcx> {
         typing_env: ty::TypingEnv<'tcx>,
         ty: Ty<'tcx>,
     ) -> bool {
-        ty.is_trivially_pure_clone_copy() || self.is_copy_raw(typing_env.as_query_input(ty))
+        ty.is_trivially_pure_clone_copy(self) || self.is_copy_raw(typing_env.as_query_input(ty))
     }
 
     /// Checks whether `ty: UseCloned` holds while ignoring region constraints.
@@ -200,7 +200,7 @@ impl<'tcx> TyCtxt<'tcx> {
         typing_env: ty::TypingEnv<'tcx>,
         ty: Ty<'tcx>,
     ) -> bool {
-        ty.is_trivially_pure_clone_copy() || self.is_use_cloned_raw(typing_env.as_query_input(ty))
+        ty.is_trivially_pure_clone_copy(self) || self.is_use_cloned_raw(typing_env.as_query_input(ty))
     }
 
     /// Returns the deeply last field of nested structures, or the same type if

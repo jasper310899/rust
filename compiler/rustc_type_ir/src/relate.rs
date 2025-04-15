@@ -500,13 +500,13 @@ pub fn structurally_relate_tys<I: Interner, R: TypeRelation<I>>(
         }
 
         (ty::Tuple(as_tree), ty::Tuple(bs_tree)) => {
-            let as_  = as_tree.flattened().collect::<Vec<_>>();
-            let bs = bs_tree.flattened().collect::<Vec<_>>();
+            let as_  = as_tree.flattened(relation.cx()).collect::<Vec<_>>();
+            let bs = bs_tree.flattened(relation.cx()).collect::<Vec<_>>();
 
             if as_.len() == bs.len() {
                 Ok(Ty::new_tup_from_iter(
                     cx,
-                    iter::zip(as_tree.flattened(), bs_tree.flattened()).map(|(a, b)| relation.relate(a, b)),
+                    iter::zip(as_tree.flattened(relation.cx()), bs_tree.flattened(relation.cx())).map(|(a, b)| relation.relate(a, b)),
                 )?)
             } else if !(as_.is_empty() || bs.is_empty()) {
                 Err(TypeError::TupleSize(ExpectedFound::new(as_.len(), bs.len())))

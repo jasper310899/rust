@@ -200,7 +200,7 @@ pub trait Tys<I: Interner<Tys = Self>>:
 
     fn output(self) -> I::Ty;
     
-    fn flattened(self) -> impl Iterator<Item = I::Ty>;
+    fn flattened(self, tcx: I) -> impl Iterator<Item = I::Ty>;
 }
 
 pub trait Abi<I: Interner<Abi = Self>>: Copy + Debug + Hash + Eq {
