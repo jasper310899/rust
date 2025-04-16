@@ -20,7 +20,7 @@ use rustc_type_ir::{self as ir, BoundVar, CollectAndApply, DynKind, TypeVisitabl
 use tracing::instrument;
 use ty::util::{AsyncDropGlueMorphology, IntTypeExt};
 
-use super::GenericParamDefKind;
+use super::{splat_direct, GenericParamDefKind};
 use crate::infer::canonical::Canonical;
 use crate::ty::InferTy::*;
 use crate::ty::{
@@ -2066,30 +2066,7 @@ impl<'tcx, I: Iterator<Item = Ty<'tcx>>> FlattenSplatRecursive<'tcx> for I {
         self.map(move |fld| {
             match fld.kind() {
                 ty::Splat(inner_flds) => {
-                    match inner_flds.kind() {
-                        ty::Tuple(tup) => {
-                            tup.iter().flatten_splat(tcx).collect::<Vec<_>>()
-                        },
-                        ty::Array(ty, n) => {
-                            let mut tys = vec![];
-
-                            for _ in 0..n.try_to_target_usize(tcx)
-                            .expect("expected monomorphic const in codegen") {
-                                tys.push(ty.clone());
-                            }
-
-                            tys
-                        }
-                        ty::Ref(region, ty, mutbl) => {
-                            match *ty.kind() {
-                                ty::Tuple(tup) => {
-                                    tup.iter().flatten_splat(tcx).map(|ty| Ty::new_ref(tcx, *region, ty, *mutbl)).collect::<Vec<_>>()
-                                },
-                                _ => todo!(),
-                            }
-                        }
-                        _ => todo!()
-                    }
+                    splat_direct(*inner_flds, tcx)
                 },
                 _ => {
                     [fld].to_vec()

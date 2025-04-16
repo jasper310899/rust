@@ -2229,3 +2229,31 @@ mod size_asserts {
     static_assert_size!(WithCachedTypeInfo<TyKind<'_>>, 48);
     // tidy-alphabetical-end
 }
+
+pub fn splat_direct<'tcx>(inner_flds: Ty<'tcx>, tcx: TyCtxt<'tcx>) -> Vec<Ty<'tcx>> {
+    use crate::ty::sty::FlattenSplatRecursive;
+    match inner_flds.kind() {
+        ty::Tuple(tup) => {
+            tup.iter().flatten_splat(tcx).collect::<Vec<_>>()
+        },
+        ty::Array(ty, n) => {
+            let mut tys = vec![];
+
+            for _ in 0..n.try_to_target_usize(tcx)
+            .expect("expected monomorphic const in codegen") {
+                tys.push(ty.clone());
+            }
+
+            tys
+        }
+        ty::Ref(region, ty, mutbl) => {
+            match *ty.kind() {
+                ty::Tuple(tup) => {
+                    tup.iter().flatten_splat(tcx).map(|ty| Ty::new_ref(tcx, *region, ty, *mutbl)).collect::<Vec<_>>()
+                },
+                _ => todo!(),
+            }
+        }
+        _ => todo!()
+    }
+}

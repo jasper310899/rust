@@ -867,11 +867,11 @@ impl<'tcx> CtxtInterners<'tcx> {
     /// Interns a type. (Use `mk_*` functions instead, where possible.)
     #[allow(rustc::usage_of_ty_tykind)]
     #[inline(never)]
-    fn intern_ty(&self, kind: TyKind<'tcx>, sess: &Session, untracked: &Untracked) -> Ty<'tcx> {
+    fn intern_ty(&self, kind: TyKind<'tcx>, sess: &Session, untracked: &Untracked, tcx: Option<TyCtxt<'tcx>>) -> Ty<'tcx> {
         Ty(Interned::new_unchecked(
             self.type_
                 .intern(kind, |kind| {
-                    let flags = super::flags::FlagComputation::for_kind(&kind);
+                    let flags = super::flags::FlagComputation::for_kind(&kind, tcx);
                     let stable_hash = self.stable_hash(&flags, sess, untracked, &kind);
 
                     InternedInSet(self.arena.alloc(WithCachedTypeInfo {
@@ -1061,8 +1061,9 @@ impl<'tcx> CommonTypes<'tcx> {
         interners: &CtxtInterners<'tcx>,
         sess: &Session,
         untracked: &Untracked,
+        tcx: Option<TyCtxt<'tcx>>
     ) -> CommonTypes<'tcx> {
-        let mk = |ty| interners.intern_ty(ty, sess, untracked);
+        let mk = |ty| interners.intern_ty(ty, sess, untracked, tcx);
 
         let ty_vars =
             (0..NUM_PREINTERNED_TY_VARS).map(|n| mk(Infer(ty::TyVar(TyVid::from(n))))).collect();
@@ -1631,7 +1632,7 @@ impl<'tcx> TyCtxt<'tcx> {
             s.dcx().emit_fatal(err);
         });
         let interners = CtxtInterners::new(arena);
-        let common_types = CommonTypes::new(&interners, s, &untracked);
+        let common_types = CommonTypes::new(&interners, s, &untracked, None);
         let common_lifetimes = CommonLifetimes::new(&interners);
         let common_consts = CommonConsts::new(&interners, &common_types, s, &untracked);
 
@@ -2830,6 +2831,7 @@ impl<'tcx> TyCtxt<'tcx> {
             self.sess,
             // This is only used to create a stable hashing context.
             &self.untracked,
+            Some(self)
         )
     }
 

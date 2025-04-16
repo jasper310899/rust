@@ -1943,8 +1943,6 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             }
         });
 
-
-
         let elt_ts_iter = elts.iter().enumerate().map(|(i, e)| match &flds {
             Some(fs) if i < fs.len() => {
                 let ety = fs[i];
@@ -1955,10 +1953,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         });
         let elt_ts_iter = elt_ts_iter.map(|ety| match ety.kind() {
             ty::Splat(ty) => {
-                match ty.kind() {
-                    ty::Tuple(tys) => tys.to_vec(),
-                    _ => todo!(),
-                }
+                rustc_middle::ty::splat_direct(*ty, self.tcx())
             },
             _ => [ety].to_vec()
         }).flatten();
