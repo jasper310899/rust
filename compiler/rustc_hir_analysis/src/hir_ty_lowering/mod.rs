@@ -38,8 +38,7 @@ use rustc_middle::middle::stability::AllowUnstable;
 use rustc_middle::mir::interpret::LitToConstInput;
 use rustc_middle::ty::print::PrintPolyTraitRefExt as _;
 use rustc_middle::ty::{
-    self, Const, GenericArgKind, GenericArgsRef, GenericParamDefKind, ParamEnv, Ty, TyCtxt,
-    TypeVisitableExt, TypingMode, Upcast, fold_regions,
+    self, fold_regions, splat_direct, Const, GenericArgKind, GenericArgsRef, GenericParamDefKind, ParamEnv, Ty, TyCtxt, TypeVisitableExt, TypingMode, Upcast
 };
 use rustc_middle::{bug, span_bug};
 use rustc_session::lint::builtin::AMBIGUOUS_ASSOCIATED_ITEMS;
@@ -2543,6 +2542,19 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         }
     }
 
+
+    #[instrument(level = "debug", skip(self), ret)]
+    pub fn lower_ty_in_tuple(&self, hir_ty: &hir::Ty<'tcx>) -> Vec<Ty<'tcx>> {
+        match hir_ty.kind {
+            hir::TyKind::Splat(splat) => {
+                let lowered = self.lower_ty(splat);
+
+                splat_direct(lowered, self.tcx())
+            },
+            _ => vec![self.lower_ty(hir_ty)]
+        }
+    }
+
     /// Lower a type from the HIR to our internal notion of a type.
     #[instrument(level = "debug", skip(self), ret)]
     pub fn lower_ty(&self, hir_ty: &hir::Ty<'tcx>) -> Ty<'tcx> {
@@ -2561,7 +2573,8 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
             }
             hir::TyKind::Never => tcx.types.never,
             hir::TyKind::Tup(fields) => {
-                Ty::new_tup_from_iter(tcx, fields.iter().map(|t| self.lower_ty(t)))
+                let folded = fields.iter().flat_map(|t| self.lower_ty_in_tuple(t));
+                Ty::new_tup_from_iter(tcx, folded)
             }
             hir::TyKind::BareFn(bf) => {
                 require_c_abi_if_c_variadic(tcx, bf.decl, bf.abi, hir_ty.span);
