@@ -1623,7 +1623,7 @@ pub fn needs_drop_components_with_async<'tcx>(
             }
         }
         // If any field needs drop, then the whole tuple does.
-        ty::Tuple(fields) => fields.iter().try_fold(SmallVec::new(), move |mut acc, elem| {
+        ty::Tuple(fields) => fields.flattened(tcx).try_fold(SmallVec::new(), move |mut acc, elem| {
             acc.extend(needs_drop_components_with_async(tcx, elem, asyncness)?);
             Ok(acc)
         }),

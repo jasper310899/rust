@@ -6,6 +6,10 @@
 type Tu = (f32,f32,f32);
 type Tu3 = (u8, &'static str);
 
+const _SPLAT_CONST : (u8, u8, ...(f32, f32, &'static str)) = (1,2,3.0,4.0, "test");
+static _SPLAT_STATIC : (u8, u8, ...(f32, f32, &'static str)) = (1,2,3.0,4.0, "test");
+
+
 fn main() {
     let _a : (u8, u8, ...(f32, f32, &'static str)) = (1,2,3.0,4.0, "test");
     assert_eq!(_a, (1,2,3.0,4.0, "test"));

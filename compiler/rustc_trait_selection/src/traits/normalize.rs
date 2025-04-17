@@ -1,5 +1,6 @@
 //! Deeply normalize types using the old trait solver.
 
+use itertools::Itertools;
 use rustc_data_structures::stack::ensure_sufficient_stack;
 use rustc_infer::infer::at::At;
 use rustc_infer::infer::{InferCtxt, InferOk};
@@ -104,13 +105,16 @@ pub(crate) fn normalize_with_depth_to<'a, 'b, 'tcx, T>(
     param_env: ty::ParamEnv<'tcx>,
     cause: ObligationCause<'tcx>,
     depth: usize,
-    value: T,
+    mut value: T,
     obligations: &mut PredicateObligations<'tcx>,
 ) -> T
 where
     T: TypeFoldable<TyCtxt<'tcx>>,
 {
     debug!(obligations.len = obligations.len());
+    let mut splat_normalizer = SplatNormalizer::new(selcx.tcx());
+
+    value = ensure_sufficient_stack(|| value.fold_with(&mut splat_normalizer));
     let mut normalizer = AssocTypeNormalizer::new(selcx, param_env, cause, depth, obligations);
     let result = ensure_sufficient_stack(|| AssocTypeNormalizer::fold(&mut normalizer, value));
     debug!(?result, obligations.len = normalizer.obligations.len());
@@ -136,6 +140,29 @@ pub(super) fn needs_normalization<'tcx, T: TypeVisitable<TyCtxt<'tcx>>>(
     }
 
     value.has_type_flags(flags)
+}
+
+struct SplatNormalizer<'tcx> {
+    ctxt: TyCtxt<'tcx>,
+}
+impl<'tcx> SplatNormalizer<'tcx> {
+    fn new(ctxt: TyCtxt<'tcx>) -> Self{
+        Self {ctxt}
+    }
+}
+impl<'tcx> TypeFolder<TyCtxt<'tcx>> for SplatNormalizer<'tcx> {
+    fn cx(&self) -> TyCtxt<'tcx> {
+        self.ctxt
+    }
+
+    fn fold_ty(&mut self, t: Ty<'tcx>) -> Ty<'tcx> {
+        match t.kind() {
+            ty::Tuple(tys) => {
+                Ty::new_tup(self.cx(), &tys.flattened(self.cx()).collect_vec())
+            },
+            _ => t
+        }
+    }
 }
 
 struct AssocTypeNormalizer<'a, 'b, 'tcx> {

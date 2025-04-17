@@ -1938,10 +1938,11 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             };
             let ty = self.try_structurally_resolve_type(expr.span, ty);
             match ty.kind() {
-                ty::Tuple(flds) => Some(flds.flattened(self.tcx()).collect_vec()),
+                ty::Tuple(flds) => Some(flds.iter().collect_vec()),
                 _ => None,
             }
         });
+
 
         let elt_ts_iter = elts.iter().enumerate().map(|(i, e)| match &flds {
             Some(fs) if i < fs.len() => {
@@ -1951,12 +1952,6 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             }
             _ => self.check_expr_with_expectation(e, NoExpectation),
         });
-        let elt_ts_iter = elt_ts_iter.map(|ety| match ety.kind() {
-            ty::Splat(ty) => {
-                rustc_middle::ty::splat_direct(*ty, self.tcx())
-            },
-            _ => [ety].to_vec()
-        }).flatten();
         let tuple = Ty::new_tup_from_iter(self.tcx, elt_ts_iter);
         if let Err(guar) = tuple.error_reported() {
             Ty::new_error(self.tcx, guar)

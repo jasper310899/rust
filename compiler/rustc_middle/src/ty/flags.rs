@@ -2,8 +2,6 @@ use std::slice;
 
 use crate::ty::{self, GenericArg, GenericArgKind, InferConst, Ty, TypeFlags};
 
-use super::TyCtxt;
-
 #[derive(Debug)]
 pub struct FlagComputation {
     pub flags: TypeFlags,
@@ -18,9 +16,9 @@ impl FlagComputation {
     }
 
     #[allow(rustc::usage_of_ty_tykind)]
-    pub fn for_kind<'tcx>(kind: &ty::TyKind<'tcx>, tcx: Option<TyCtxt<'tcx>>) -> FlagComputation {
+    pub fn for_kind<'tcx>(kind: &ty::TyKind<'tcx>) -> FlagComputation {
         let mut result = FlagComputation::new();
-        result.add_kind(kind, tcx);
+        result.add_kind(kind);
         result
     }
 
@@ -88,7 +86,7 @@ impl FlagComputation {
     }
 
     #[allow(rustc::usage_of_ty_tykind)]
-    fn add_kind<'tcx>(&mut self, kind: &ty::TyKind<'tcx>, tcx: Option<TyCtxt<'tcx>>) {
+    fn add_kind<'tcx>(&mut self, kind: &ty::TyKind<'tcx>) {
         match kind {
             | &ty::Bool
             | &ty::Char
@@ -174,9 +172,9 @@ impl FlagComputation {
                     }
                 }
             }
-
+ 
             &ty::Splat(_tt) => {
-                bug!("splat should already be resolved");
+                //bug!("splat should already be resolved");
             }
             &ty::Slice(tt) => self.add_ty(tt),
 

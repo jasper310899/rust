@@ -1918,7 +1918,7 @@ impl<'tcx> Ty<'tcx> {
 
             ty::Str | ty::Slice(_) | ty::Dynamic(_, _, ty::Dyn) | ty::Foreign(..) => false,
 
-            ty::Tuple(tys) => tys.last().is_none_or(|ty| ty.is_trivially_sized(tcx)),
+            ty::Tuple(tys) => tys.flattened(tcx).last().is_none_or(|ty| ty.is_trivially_sized(tcx)),
 
             ty::Adt(def, args) => def
                 .sized_constraint(tcx)
@@ -1962,7 +1962,7 @@ impl<'tcx> Ty<'tcx> {
 
             // A 100-tuple isn't "trivial", so doing this only for reasonable sizes.
             ty::Tuple(field_tys) => {
-                field_tys.flattened(tcx).count() <= 3 && field_tys.flattened(tcx).all(|ty| ty.is_trivially_pure_clone_copy(tcx))
+                field_tys.flattened(tcx).count() <= 3 && field_tys.iter().all(|ty| ty.is_trivially_pure_clone_copy(tcx))
             }
 
             ty::Pat(ty, _) => ty.is_trivially_pure_clone_copy(tcx),

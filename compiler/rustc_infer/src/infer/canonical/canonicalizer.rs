@@ -341,6 +341,12 @@ impl<'cx, 'tcx> TypeFolder<TyCtxt<'tcx>> for Canonicalizer<'cx, 'tcx> {
     }
 
     fn fold_ty(&mut self, mut t: Ty<'tcx>) -> Ty<'tcx> {
+
+        if let ty::Tuple(tys) = *t.kind() {
+            //Flatten tuple splats
+            t = Ty::new_tup(self.cx(), &tys.flattened(self.cx()).collect::<Vec<_>>());
+        }
+
         match *t.kind() {
             ty::Infer(ty::TyVar(mut vid)) => {
                 // We need to canonicalize the *root* of our ty var.

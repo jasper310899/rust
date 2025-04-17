@@ -942,7 +942,7 @@ where
                     }
                 },
 
-                ty::Tuple(tys) => TyMaybeWithLayout::Ty(tys[i]),
+                ty::Tuple(tys) => TyMaybeWithLayout::Ty(tys.flattened(tcx).collect::<Vec<_>>()[i]),
 
                 // ADTs.
                 ty::Adt(def, args) => {

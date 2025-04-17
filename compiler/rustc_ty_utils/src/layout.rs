@@ -204,7 +204,6 @@ fn layout_of_uncached<'tcx>(
     debug_assert!(!ty.has_non_region_infer());
 
     Ok(match *ty.kind() {
-        ty::Splat(_) => todo!(),
         ty::Pat(ty, pat) => {
             let layout = cx.layout_of(ty)?.layout;
             let mut layout = LayoutData::clone(&layout.0);
@@ -455,11 +454,13 @@ fn layout_of_uncached<'tcx>(
             univariant(args.as_coroutine_closure().upvar_tys(), StructKind::AlwaysSized)?
         }
 
+        ty::Splat(_) => { univariant(&[], StructKind::AlwaysSized)? },
         ty::Tuple(tys) => {
             let kind =
                 if tys.len() == 0 { StructKind::AlwaysSized } else { StructKind::MaybeUnsized };
 
-            univariant(tys, kind)?
+            use itertools::Itertools;
+            univariant(&tys.flattened(tcx).collect_vec(), kind)?
         }
 
         // SIMD vector types.
