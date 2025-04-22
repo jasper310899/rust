@@ -7,8 +7,7 @@ use rustc_ast::util::classify;
 use rustc_ast::util::literal::escape_byte_str_symbol;
 use rustc_ast::util::parser::{self, ExprPrecedence, Fixity};
 use rustc_ast::{
-    self as ast, BlockCheckMode, FormatAlignment, FormatArgPosition, FormatArgsPiece, FormatCount,
-    FormatDebugHex, FormatSign, FormatTrait, YieldKind, token,
+    self as ast, token, BlockCheckMode, FormatAlignment, FormatArgPosition, FormatArgsPiece, FormatCount, FormatDebugHex, FormatSign, FormatTrait, SplattableExpr, YieldKind
 };
 
 use crate::pp::Breaks::Inconsistent;
@@ -202,9 +201,9 @@ impl<'a> State<'a> {
         self.word("}");
     }
 
-    fn print_expr_tup(&mut self, exprs: &[P<ast::Expr>]) {
+    fn print_expr_tup(&mut self, exprs: &[SplattableExpr]) {
         self.popen();
-        self.commasep_exprs(Inconsistent, exprs);
+        self.commasep_exprs_splat(Inconsistent, exprs);
         if exprs.len() == 1 {
             self.word(",");
         }
@@ -349,6 +348,13 @@ impl<'a> State<'a> {
 
     pub(super) fn print_expr(&mut self, expr: &ast::Expr, fixup: FixupContext) {
         self.print_expr_outer_attr_style(expr, true, fixup)
+    }
+
+    pub(super) fn print_expr_splt(&mut self, expr: &SplattableExpr, fixup: FixupContext) {
+        if expr.splt {
+            self.word("...");
+        }
+        self.print_expr(&expr.expr, fixup);
     }
 
     pub(super) fn print_expr_outer_attr_style(

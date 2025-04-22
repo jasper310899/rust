@@ -201,6 +201,10 @@ pub trait MutVisitor: Sized {
         noop_filter_map_expr(self, e)
     }
 
+    fn filter_map_splat(&mut self, e: SplattableExpr) -> Option<SplattableExpr> {
+        noop_filter_map_expr_splt(self, e)
+    }
+
     fn visit_generic_arg(&mut self, arg: &mut GenericArg) {
         walk_generic_arg(self, arg);
     }
@@ -455,6 +459,11 @@ fn visit_thin_exprs<T: MutVisitor>(vis: &mut T, exprs: &mut ThinVec<P<Expr>>) {
 }
 
 // No `noop_` prefix because there isn't a corresponding method in `MutVisitor`.
+fn visit_thin_splattable<T: MutVisitor>(vis: &mut T, exprs: &mut ThinVec<SplattableExpr>) {
+    exprs.flat_map_in_place(|expr| vis.filter_map_splat(expr))
+}
+
+// No `noop_` prefix because there isn't a corresponding method in `MutVisitor`.
 fn visit_bounds<T: MutVisitor>(vis: &mut T, bounds: &mut GenericBounds, ctxt: BoundKind) {
     visit_vec(bounds, |bound| vis.visit_param_bound(bound, ctxt));
 }
@@ -576,7 +585,7 @@ pub fn walk_ty<T: MutVisitor>(vis: &mut T, ty: &mut P<Ty>) {
             generic_params.flat_map_in_place(|param| vis.flat_map_generic_param(param));
             vis.visit_ty(inner_ty);
         }
-        TyKind::Tup(tys) => visit_thin_vec(tys, |ty| vis.visit_ty(ty)),
+        TyKind::Tup(tys) => visit_thin_vec(tys, |splattable| vis.visit_ty(&mut splattable.ty)),
         TyKind::Paren(ty) => vis.visit_ty(ty),
         TyKind::Pat(ty, pat) => {
             vis.visit_ty(ty);
@@ -1563,7 +1572,7 @@ pub fn walk_pat<T: MutVisitor>(vis: &mut T, pat: &mut P<Pat>) {
         PatKind::TupleStruct(qself, path, elems) => {
             vis.visit_qself(qself);
             vis.visit_path(path);
-            visit_thin_vec(elems, |elem| vis.visit_pat(elem));
+            visit_thin_vec(elems, |elem| vis.visit_pat(&mut elem.pat));
         }
         PatKind::Path(qself, path) => {
             vis.visit_qself(qself);
@@ -1586,8 +1595,11 @@ pub fn walk_pat<T: MutVisitor>(vis: &mut T, pat: &mut P<Pat>) {
             vis.visit_pat(p);
             vis.visit_expr(e);
         }
-        PatKind::Tuple(elems) | PatKind::Slice(elems) | PatKind::Or(elems) => {
+        PatKind::Slice(elems) | PatKind::Or(elems) => {
             visit_thin_vec(elems, |elem| vis.visit_pat(elem))
+        }
+        PatKind::Tuple(elems) => {
+            visit_thin_vec(elems, |elem| vis.visit_pat(&mut elem.pat))
         }
         PatKind::Paren(inner) => vis.visit_pat(inner),
         PatKind::MacCall(mac) => vis.visit_mac_call(mac),
@@ -1668,7 +1680,7 @@ pub fn walk_expr<T: MutVisitor>(vis: &mut T, Expr { kind, id, span, attrs, token
             vis.visit_expr(expr);
             vis.visit_anon_const(count);
         }
-        ExprKind::Tup(exprs) => visit_thin_exprs(vis, exprs),
+        ExprKind::Tup(exprs) => visit_thin_splattable(vis, exprs),
         ExprKind::Call(f, args) => {
             vis.visit_expr(f);
             visit_thin_exprs(vis, args);
@@ -1854,6 +1866,12 @@ pub fn walk_expr<T: MutVisitor>(vis: &mut T, Expr { kind, id, span, attrs, token
 pub fn noop_filter_map_expr<T: MutVisitor>(vis: &mut T, mut e: P<Expr>) -> Option<P<Expr>> {
     Some({
         vis.visit_expr(&mut e);
+        e
+    })
+}
+pub fn noop_filter_map_expr_splt<T: MutVisitor>(vis: &mut T, mut e: SplattableExpr) -> Option<SplattableExpr> {
+    Some({
+        vis.visit_expr(&mut e.expr);
         e
     })
 }

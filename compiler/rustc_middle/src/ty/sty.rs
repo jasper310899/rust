@@ -15,6 +15,7 @@ use rustc_hir::LangItem;
 use rustc_hir::def_id::DefId;
 use rustc_macros::{HashStable, TyDecodable, TyEncodable, TypeFoldable, extension};
 use rustc_span::{DUMMY_SP, Span, Symbol, sym};
+use rustc_type_ir::inherent::SplattableTy;
 use rustc_type_ir::TyKind::*;
 use rustc_type_ir::walk::TypeWalker;
 use rustc_type_ir::{self as ir, BoundVar, CollectAndApply, DynKind, TypeVisitableExt, elaborate};
@@ -676,14 +677,14 @@ impl<'tcx> Ty<'tcx> {
     }
 
     #[inline]
-    pub fn new_tup(tcx: TyCtxt<'tcx>, ts: &[Ty<'tcx>]) -> Ty<'tcx> {
+    pub fn new_tup(tcx: TyCtxt<'tcx>, ts: &[ty::Ty<'tcx>]) -> Ty<'tcx> {
         if ts.is_empty() { tcx.types.unit } else { Ty::new(tcx, Tuple(tcx.mk_type_list(ts))) }
     }
 
     pub fn new_tup_from_iter<I, T>(tcx: TyCtxt<'tcx>, iter: I) -> T::Output
     where
         I: Iterator<Item = T>,
-        T: CollectAndApply<Ty<'tcx>, Ty<'tcx>>,
+        T: CollectAndApply<Self, Self>,
     {
         T::collect_and_apply(iter, |ts| Ty::new_tup(tcx, ts))
     }
@@ -987,14 +988,14 @@ impl<'tcx> rustc_type_ir::inherent::Ty<TyCtxt<'tcx>> for Ty<'tcx> {
         Ty::new_slice(interner, ty)
     }
 
-    fn new_tup(interner: TyCtxt<'tcx>, tys: &[Ty<'tcx>]) -> Self {
+    fn new_tup(interner: TyCtxt<'tcx>, tys: &[SplattableTy<'tcx>]) -> Self {
         Ty::new_tup(interner, tys)
     }
 
     fn new_tup_from_iter<It, T>(interner: TyCtxt<'tcx>, iter: It) -> T::Output
     where
         It: Iterator<Item = T>,
-        T: CollectAndApply<Self, Self>,
+        T: CollectAndApply<SplattableTy<'tcx>, Self>,
     {
         Ty::new_tup_from_iter(interner, iter)
     }
@@ -1471,7 +1472,7 @@ impl<'tcx> Ty<'tcx> {
     /// Iterates over tuple fields.
     /// Panics when called on anything but a tuple.
     #[inline]
-    pub fn tuple_fields(self) -> &'tcx List<Ty<'tcx>> {
+    pub fn tuple_fields(self) -> &'tcx List<ty::SplattableTy<'tcx>> {
         match self.kind() {
             Tuple(args) => args,
             _ => bug!("tuple_fields called on non-tuple: {self:?}"),
@@ -1596,12 +1597,12 @@ impl<'tcx> Ty<'tcx> {
                     tcx,
                     adt_def.variants().iter().map(|v| v.fields.iter().map(|f| f.ty(tcx, args))),
                 ),
-            ty::Tuple(tys) => self.adt_async_destructor_ty(tcx, iter::once(tys)),
+            ty::Tuple(tys) => self.adt_async_destructor_ty(tcx, iter::once(tys.iter().map(|a| a.unimplemented_splat()))),
             ty::Closure(_, args) => {
-                self.adt_async_destructor_ty(tcx, iter::once(args.as_closure().upvar_tys()))
+                self.adt_async_destructor_ty(tcx, iter::once(args.as_closure().upvar_tys().iter().map(|a| a.unimplemented_splat())))
             }
             ty::CoroutineClosure(_, args) => self
-                .adt_async_destructor_ty(tcx, iter::once(args.as_coroutine_closure().upvar_tys())),
+                .adt_async_destructor_ty(tcx, iter::once(args.as_coroutine_closure().upvar_tys().iter().map(|a| a.unimplemented_splat()))),
 
             ty::Adt(adt_def, _) => {
                 assert!(adt_def.is_union());
@@ -1906,7 +1907,7 @@ impl<'tcx> Ty<'tcx> {
 
             ty::Str | ty::Slice(_) | ty::Dynamic(_, _, ty::Dyn) | ty::Foreign(..) => false,
 
-            ty::Tuple(tys) => tys.last().is_none_or(|ty| ty.is_trivially_sized(tcx)),
+            ty::Tuple(tys) => tys.last().is_none_or(|ty| ty.unimplemented_splat().is_trivially_sized(tcx)),
 
             ty::Adt(def, args) => def
                 .sized_constraint(tcx)
@@ -1949,7 +1950,7 @@ impl<'tcx> Ty<'tcx> {
 
             // A 100-tuple isn't "trivial", so doing this only for reasonable sizes.
             ty::Tuple(field_tys) => {
-                field_tys.len() <= 3 && field_tys.iter().all(Self::is_trivially_pure_clone_copy)
+                field_tys.len() <= 3 && field_tys.iter().all(|a| a.unimplemented_splat().is_trivially_pure_clone_copy())
             }
 
             ty::Pat(ty, _) => ty.is_trivially_pure_clone_copy(),
@@ -2046,13 +2047,17 @@ impl<'tcx> Ty<'tcx> {
     }
 }
 
-impl<'tcx> rustc_type_ir::inherent::Tys<TyCtxt<'tcx>> for &'tcx ty::List<Ty<'tcx>> {
+impl<'tcx> rustc_type_ir::inherent::Tys<TyCtxt<'tcx>> for &'tcx ty::List<rustc_middle::ty::Ty<'tcx>> {
     fn inputs(self) -> &'tcx [Ty<'tcx>] {
         self.split_last().unwrap().1
     }
 
     fn output(self) -> Ty<'tcx> {
-        *self.split_last().unwrap().0
+        self.split_last().unwrap().0
+    }
+    
+    fn non_splat_vec(self) -> Vec<Ty<'tcx>> {
+        self.iter().map(|a| a).collect()
     }
 }
 

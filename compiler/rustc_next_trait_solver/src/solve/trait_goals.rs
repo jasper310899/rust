@@ -675,7 +675,7 @@ where
                     ecx.add_goals(
                         GoalSource::ImplWhereBound,
                         tys.iter().map(|elem_ty| {
-                            goal.with(cx, ty::TraitRef::new(cx, goal.predicate.def_id(), [elem_ty]))
+                            goal.with(cx, ty::TraitRef::new(cx, goal.predicate.def_id(), [elem_ty.unimplemented_splat()]))
                         }),
                     );
                 }

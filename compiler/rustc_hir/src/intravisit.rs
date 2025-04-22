@@ -971,7 +971,7 @@ pub fn walk_ty<'v, V: Visitor<'v>>(visitor: &mut V, typ: &'v Ty<'v, AmbigArg>) -
         }
         TyKind::Never => {}
         TyKind::Tup(tuple_element_types) => {
-            walk_list!(visitor, visit_ty_unambig, tuple_element_types);
+            walk_list!(visitor, visit_ty_unambig, tuple_element_types.iter().map(|splt| &splt.ty));
         }
         TyKind::BareFn(ref function_declaration) => {
             walk_list!(visitor, visit_generic_param, function_declaration.generic_params);

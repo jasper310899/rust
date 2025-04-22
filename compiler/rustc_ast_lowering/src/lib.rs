@@ -1187,8 +1187,12 @@ impl<'a, 'hir> LoweringContext<'a, 'hir> {
         hir::Ty { hir_id: self.next_id(), kind, span: self.lower_span(span) }
     }
 
-    fn ty_tup(&mut self, span: Span, tys: &'hir [hir::Ty<'hir>]) -> hir::Ty<'hir> {
+    fn ty_tup(&mut self, span: Span, tys: &'hir [hir::SplattableTy<'hir>]) -> hir::Ty<'hir> {
         self.ty(span, hir::TyKind::Tup(tys))
+    }
+
+    fn lower_ty_splattable(&mut self, t: &SplattableTy, itctx: ImplTraitContext) -> hir::SplattableTy<'hir> {
+        hir::SplattableTy { ty: self.lower_ty_direct(&t.ty, itctx), splat: t.splt }
     }
 
     fn lower_ty_direct(&mut self, t: &Ty, itctx: ImplTraitContext) -> hir::Ty<'hir> {
@@ -1258,7 +1262,7 @@ impl<'a, 'hir> LoweringContext<'a, 'hir> {
             }
             TyKind::Never => hir::TyKind::Never,
             TyKind::Tup(tys) => hir::TyKind::Tup(
-                self.arena.alloc_from_iter(tys.iter().map(|ty| self.lower_ty_direct(ty, itctx))),
+                self.arena.alloc_from_iter(tys.iter().map(|ty| self.lower_ty_splattable(ty, itctx))),
             ),
             TyKind::Paren(ty) => {
                 return self.lower_ty_direct(ty, itctx);

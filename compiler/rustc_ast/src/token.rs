@@ -620,7 +620,11 @@ impl Token {
     }
 
     pub fn is_range_separator(&self) -> bool {
-        [DotDot, DotDotDot, DotDotEq].contains(&self.kind)
+        if self.span.edition() <= Edition::Edition2018 {
+            [DotDot, DotDotDot, DotDotEq].contains(&self.kind)
+        } else {
+            [DotDot, DotDotEq].contains(&self.kind)
+        }
     }
 
     pub fn is_punct(&self) -> bool {

@@ -16,6 +16,7 @@ use rustc_index::bit_set::GrowableBitSet;
 use rustc_macros::{HashStable, TyDecodable, TyEncodable, extension};
 use rustc_session::Limit;
 use rustc_span::sym;
+use rustc_type_ir::inherent::SplattableTy;
 use smallvec::{SmallVec, smallvec};
 use tracing::{debug, instrument};
 
@@ -282,7 +283,7 @@ impl<'tcx> TyCtxt<'tcx> {
 
                 ty::Tuple(tys) if let Some((&last_ty, _)) = tys.split_last() => {
                     f();
-                    ty = last_ty;
+                    ty = last_ty.unimplemented_splat();
                 }
 
                 ty::Tuple(_) => break,
@@ -359,8 +360,8 @@ impl<'tcx> TyCtxt<'tcx> {
                 }
                 (&ty::Tuple(a_tys), &ty::Tuple(b_tys)) if a_tys.len() == b_tys.len() => {
                     if let Some(&a_last) = a_tys.last() {
-                        a = a_last;
-                        b = *b_tys.last().unwrap();
+                        a = a_last.unimplemented_splat();
+                        b = *b_tys.last().unwrap().unimplemented_splat();
                     } else {
                         break;
                     }
@@ -762,7 +763,7 @@ impl<'tcx> TyCtxt<'tcx> {
     pub fn coroutine_hidden_types(
         self,
         def_id: DefId,
-    ) -> ty::EarlyBinder<'tcx, ty::Binder<'tcx, &'tcx ty::List<Ty<'tcx>>>> {
+    ) -> ty::EarlyBinder<'tcx, ty::Binder<'tcx, &'tcx ty::List<SplattableTy<'tcx>>>> {
         let coroutine_layout = self.mir_coroutine_witnesses(def_id);
         let mut vars = vec![];
         let bound_tys = self.mk_type_list_from_iter(

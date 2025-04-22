@@ -433,6 +433,38 @@ pub struct CReaderCacheKey {
 #[rustc_pass_by_value]
 pub struct Ty<'tcx>(Interned<'tcx, WithCachedTypeInfo<TyKind<'tcx>>>);
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, HashStable, Hash)]
+pub struct SplattableTy<'tcx> {
+    ty: ty::Ty<'tcx>,
+    splt: bool,
+}
+
+impl<'tcx> rustc_type_ir::inherent::SplattableTy<TyCtxt<'tcx>> for SplattableTy<'tcx> {
+    fn unimplemented_splat(&self) -> <context::TyCtxt<'tcx> as rustc_type_ir::Interner>::Ty { todo!() }
+    fn splt(&self) -> bool { todo!() }
+    fn ty(&self) -> <context::TyCtxt<'tcx> as rustc_type_ir::Interner>::Ty { todo!() }
+}
+
+impl<'tcx> TypeFoldable<TyCtxt<'tcx>> for SplattableTy<'tcx> {
+    fn try_fold_with<F>(self, _: &mut F) -> Result<Self, <F as rustc_type_ir::FallibleTypeFolder<context::TyCtxt<'tcx>>>::Error> where F: rustc_type_ir::FallibleTypeFolder<TyCtxt<'tcx>> {
+        todo!()
+    }
+    fn fold_with<F>(self, _: &mut F) -> Self where F: rustc_type_ir::TypeFolder<TyCtxt<'tcx>> { todo!() }
+}
+
+impl<'tcx> TypeVisitable<TyCtxt<'tcx>> for SplattableTy<'tcx> {
+    fn visit_with<V>(&self, _: &mut V) -> <V as rustc_type_ir::TypeVisitor<context::TyCtxt<'tcx>>>::Result where V: rustc_type_ir::TypeVisitor<TyCtxt<'tcx>> { todo!() }
+}
+
+impl<'tcx> rustc_type_ir::relate::Relate<context::TyCtxt<'tcx>> for ty::SplattableTy<'tcx> {
+    fn relate<R>(_: &mut R, _: Self, _: Self) -> Result<Self, rustc_type_ir::error::TypeError<context::TyCtxt<'tcx>>> where R: rustc_type_ir::relate::TypeRelation<TyCtxt<'tcx>> { todo!() }
+}
+impl<'tcx> From<Ty<'tcx>> for SplattableTy<'tcx> {
+    fn from(value: Ty<'tcx>) -> Self {
+        SplattableTy { ty: value, splt: false }
+    }
+}
+
 impl<'tcx> rustc_type_ir::inherent::IntoKind for Ty<'tcx> {
     type Kind = TyKind<'tcx>;
 

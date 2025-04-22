@@ -388,7 +388,7 @@ fn find_item_ty_spans(
         }
         hir::TyKind::Array(ty, _) => find_item_ty_spans(tcx, ty, needle, spans, seen_representable),
         hir::TyKind::Tup(tys) => {
-            tys.iter().for_each(|ty| find_item_ty_spans(tcx, ty, needle, spans, seen_representable))
+            tys.iter().for_each(|ty| find_item_ty_spans(tcx, &ty.unimplemented_splat(), needle, spans, seen_representable))
         }
         _ => {}
     }

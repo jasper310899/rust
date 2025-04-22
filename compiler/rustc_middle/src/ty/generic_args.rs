@@ -640,26 +640,11 @@ impl<'tcx> TypeFoldable<TyCtxt<'tcx>> for GenericArgsRef<'tcx> {
     }
 }
 
-impl<'tcx> TypeFoldable<TyCtxt<'tcx>> for &'tcx ty::List<Ty<'tcx>> {
+impl<'tcx> TypeFoldable<TyCtxt<'tcx>> for &'tcx ty::List<ty::Ty<'tcx>> {
     fn try_fold_with<F: FallibleTypeFolder<TyCtxt<'tcx>>>(
         self,
         folder: &mut F,
     ) -> Result<Self, F::Error> {
-        // This code is fairly hot, though not as hot as `GenericArgsRef`.
-        //
-        // When compiling stage 2, I get the following results:
-        //
-        // len |   total   |   %
-        // --- | --------- | -----
-        //  2  |  15083590 |  48.1
-        //  3  |   7540067 |  24.0
-        //  1  |   5300377 |  16.9
-        //  4  |   1351897 |   4.3
-        //  0  |   1256849 |   4.0
-        //
-        // I've tried it with some private repositories and got
-        // close to the same result, with 4 and 0 swapping places
-        // sometimes.
         match self.len() {
             2 => {
                 let param0 = self[0].try_fold_with(folder)?;

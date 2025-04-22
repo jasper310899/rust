@@ -50,6 +50,7 @@ use rustc_session::lint::Lint;
 use rustc_session::{Limit, MetadataKind, Session};
 use rustc_span::def_id::{CRATE_DEF_ID, DefPathHash, StableCrateId};
 use rustc_span::{DUMMY_SP, Ident, Span, Symbol, kw, sym};
+use rustc_type_ir::inherent::SplattableTy;
 use rustc_type_ir::TyKind::*;
 use rustc_type_ir::lang_items::TraitSolverLangItem;
 pub use rustc_type_ir::lift::Lift;
@@ -124,9 +125,10 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
         self.dep_graph.with_anon_task(self, crate::dep_graph::dep_kinds::TraitSelect, task)
     }
     type Ty = Ty<'tcx>;
-    type Tys = &'tcx List<Ty<'tcx>>;
+    type Tys = &'tcx List<ty::Ty<'tcx>>;
+    type SplattableTy = ty::SplattableTy<'tcx>;
 
-    type FnInputTys = &'tcx [Ty<'tcx>];
+    type FnInputTys = &'tcx [ty::Ty<'tcx>];
     type ParamTy = ParamTy;
     type BoundTy = ty::BoundTy;
 
@@ -331,7 +333,7 @@ impl<'tcx> Interner for TyCtxt<'tcx> {
     fn coroutine_hidden_types(
         self,
         def_id: DefId,
-    ) -> ty::EarlyBinder<'tcx, ty::Binder<'tcx, &'tcx ty::List<Ty<'tcx>>>> {
+    ) -> ty::EarlyBinder<'tcx, ty::Binder<'tcx, &'tcx ty::List<ty::Ty<'tcx>>>> {
         self.coroutine_hidden_types(def_id)
     }
 
@@ -2345,6 +2347,7 @@ nop_lift! { layout; Layout<'a> => Layout<'tcx> }
 nop_lift! { valtree; ValTree<'a> => ValTree<'tcx> }
 
 nop_list_lift! { type_lists; Ty<'a> => Ty<'tcx> }
+nop_list_lift! { type_lists_splat; SplattableTy<'a> => SplattableTy<'tcx> }
 nop_list_lift! {
     poly_existential_predicates; PolyExistentialPredicate<'a> => PolyExistentialPredicate<'tcx>
 }
@@ -2684,7 +2687,7 @@ impl<'tcx> TyCtxt<'tcx> {
     /// It cannot convert a closure that requires unsafe.
     pub fn signature_unclosure(self, sig: PolyFnSig<'tcx>, safety: hir::Safety) -> PolyFnSig<'tcx> {
         sig.map_bound(|s| {
-            let params = match s.inputs()[0].kind() {
+            let params = match s.inputs()[0].unimplemented_splat().kind() {
                 ty::Tuple(params) => *params,
                 _ => bug!(),
             };
@@ -2957,7 +2960,7 @@ impl<'tcx> TyCtxt<'tcx> {
         T: CollectAndApply<Ty<'tcx>, ty::FnSig<'tcx>>,
     {
         T::collect_and_apply(inputs.into_iter().chain(iter::once(output)), |xs| ty::FnSig {
-            inputs_and_output: self.mk_type_list(xs),
+            inputs_and_output: self.mk_type_list_splat(xs),
             c_variadic,
             safety,
             abi,
@@ -2989,6 +2992,14 @@ impl<'tcx> TyCtxt<'tcx> {
         T: CollectAndApply<Ty<'tcx>, &'tcx List<Ty<'tcx>>>,
     {
         T::collect_and_apply(iter, |xs| self.mk_type_list(xs))
+    }
+
+    pub fn mk_type_list_splat_from_iter<I, T>(self, iter: I) -> T::Output
+    where
+        I: Iterator<Item = T>,
+        T: CollectAndApply<Ty<'tcx>, &'tcx List<ty::SplattableTy<'tcx>>>,
+    {
+        T::collect_and_apply(iter, |xs| self.mk_type_list_splat(xs))
     }
 
     pub fn mk_args_from_iter<I, T>(self, iter: I) -> T::Output

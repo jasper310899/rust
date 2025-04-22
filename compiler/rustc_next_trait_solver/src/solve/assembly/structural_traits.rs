@@ -65,7 +65,7 @@ where
 
         ty::Tuple(tys) => {
             // (T1, ..., Tn) -- meets any bound that all of T1...Tn meet
-            Ok(ty::Binder::dummy(tys.to_vec()))
+            Ok(ty::Binder::dummy(tys.non_splat_vec()))
         }
 
         ty::Closure(_, args) => Ok(ty::Binder::dummy(vec![args.as_closure().tupled_upvars_ty()])),
@@ -83,7 +83,7 @@ where
             .cx()
             .coroutine_hidden_types(def_id)
             .instantiate(cx, args)
-            .map_bound(|tys| tys.to_vec())),
+            .map_bound(|tys| tys.non_splat_vec())),
 
         ty::UnsafeBinder(bound_ty) => Ok(bound_ty.map_bound(|ty| vec![ty])),
 
@@ -525,7 +525,7 @@ pub(in crate::solve) fn extract_tupled_inputs_and_output_from_async_callable<I: 
             let future_output_ty = Ty::new_projection(cx, future_output_def_id, [sig.output()]);
             Ok((
                 bound_sig.rebind(AsyncCallableRelevantTypes {
-                    tupled_inputs_ty: sig.inputs().get(0).unwrap(),
+                    tupled_inputs_ty: sig.inputs().get(0).unwrap().unimplemented_splat(),
                     output_coroutine_ty: sig.output(),
                     coroutine_return_ty: future_output_ty,
                 }),

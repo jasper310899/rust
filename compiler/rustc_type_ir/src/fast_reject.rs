@@ -159,6 +159,7 @@ pub fn simplify_type<I: Interner>(
         ty::Foreign(def_id) => Some(SimplifiedType::Foreign(def_id)),
         ty::Error(_) => Some(SimplifiedType::Error),
         ty::Bound(..) | ty::Infer(_) => None,
+        ty::Splat(..) => todo!(),
     }
 }
 

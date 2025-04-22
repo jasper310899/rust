@@ -505,7 +505,7 @@ impl<'hir> GenericArgs<'hir> {
     ///
     /// Returns the `Ty0, Ty1, ...` and the `RetTy` in `Trait(Ty0, Ty1, ...) -> RetTy`.
     /// Panics if the parenthesized arguments have an incorrect form (this shouldn't happen).
-    pub fn paren_sugar_inputs_output(&self) -> Option<(&[Ty<'hir>], &Ty<'hir>)> {
+    pub fn paren_sugar_inputs_output(&self) -> Option<(&[SplattableTy<'hir>], &Ty<'hir>)> {
         if self.parenthesized != GenericArgsParentheses::ParenSugar {
             return None;
         }
@@ -2903,7 +2903,22 @@ pub struct MutTy<'hir> {
     pub ty: &'hir Ty<'hir>,
     pub mutbl: Mutability,
 }
-
+#[derive(Debug, Clone, Copy, HashStable_Generic)]
+pub struct SplattableTy<'hir> {
+    pub ty: Ty<'hir>,
+    pub splat: bool,
+}
+impl<'hir> SplattableTy<'hir> {
+    fn is_suggestable_infer_type(&self) -> bool {
+        self.ty.is_suggestable_infer_ty()
+    }
+    pub fn unimplemented_splat(self) -> Ty<'hir> {
+        if self.splat {
+            todo!()
+        }
+        self.ty
+    }
+}
 /// Represents a function's signature in a trait declaration,
 /// trait implementation, or a free function.
 #[derive(Debug, Clone, Copy, HashStable_Generic)]
@@ -3291,7 +3306,7 @@ impl<'hir> Ty<'hir> {
             TyKind::Array(ty, length) => {
                 ty.is_suggestable_infer_ty() || matches!(length.kind, ConstArgKind::Infer(..))
             }
-            TyKind::Tup(tys) => tys.iter().any(Self::is_suggestable_infer_ty),
+            TyKind::Tup(tys) => tys.iter().any(SplattableTy::is_suggestable_infer_type),
             TyKind::Ptr(mut_ty) | TyKind::Ref(_, mut_ty) => mut_ty.ty.is_suggestable_infer_ty(),
             TyKind::Path(QPath::TypeRelative(ty, segment)) => {
                 ty.is_suggestable_infer_ty() || are_suggestable_generic_args(segment.args().args)
@@ -3525,7 +3540,7 @@ pub enum TyKind<'hir, Unambig = ()> {
     /// The never type (`!`).
     Never,
     /// A tuple (`(A, B, C, D, ...)`).
-    Tup(&'hir [Ty<'hir>]),
+    Tup(&'hir [SplattableTy<'hir>]),
     /// A path to a type definition (`module::module::...::Type`), or an
     /// associated type (e.g., `<Vec<T> as Trait>::Type` or `<T>::Target`).
     ///

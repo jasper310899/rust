@@ -624,11 +624,12 @@ impl Pat {
             PatKind::Struct(_, _, fields, _) => fields.iter().for_each(|field| field.pat.walk(it)),
 
             // Sequence of patterns.
-            PatKind::TupleStruct(_, _, s)
-            | PatKind::Tuple(s)
-            | PatKind::Slice(s)
+            PatKind::Slice(s)
             | PatKind::Or(s) => s.iter().for_each(|p| p.walk(it)),
 
+            PatKind::TupleStruct(_, _, s) | PatKind::Tuple(s) => {
+                s.iter().for_each(|p| p.pat.walk(it))
+            }
             // Trivial wrappers over inner patterns.
             PatKind::Box(s)
             | PatKind::Deref(s)
@@ -799,7 +800,7 @@ pub enum PatKind {
     Struct(Option<P<QSelf>>, Path, ThinVec<PatField>, PatFieldsRest),
 
     /// A tuple struct/variant pattern (`Variant(x, y, .., z)`).
-    TupleStruct(Option<P<QSelf>>, Path, ThinVec<P<Pat>>),
+    TupleStruct(Option<P<QSelf>>, Path, ThinVec<SplattablePat>),
 
     /// An or-pattern `A | B | C`.
     /// Invariant: `pats.len() >= 2`.
@@ -812,7 +813,7 @@ pub enum PatKind {
     Path(Option<P<QSelf>>, Path),
 
     /// A tuple pattern (`(a, b)`).
-    Tuple(ThinVec<P<Pat>>),
+    Tuple(ThinVec<SplattablePat>),
 
     /// A `box` pattern.
     Box(P<Pat>),
@@ -1611,7 +1612,7 @@ pub enum ExprKind {
     /// A method call (e.g., `x.foo::<Bar, Baz>(a, b, c)`).
     MethodCall(Box<MethodCall>),
     /// A tuple (e.g., `(a, b, c, d)`).
-    Tup(ThinVec<P<Expr>>),
+    Tup(ThinVec<SplattableExpr>),
     /// A binary operation (e.g., `a + b`, `a * b`).
     Binary(BinOp, P<Expr>, P<Expr>),
     /// A unary operation (e.g., `!x`, `*x`).
@@ -2167,6 +2168,41 @@ pub struct MutTy {
     pub mutbl: Mutability,
 }
 
+#[derive(Clone, Encodable, Decodable, Debug)]
+pub struct SplattableTy {
+    pub ty: P<Ty>,
+    pub splt: bool,
+}
+#[derive(Clone, Encodable, Decodable, Debug)]
+pub struct SplattableExpr {
+    pub expr: P<Expr>,
+    pub splt: bool,
+}
+
+#[derive(Clone, Encodable, Decodable, Debug)]
+pub struct SplattablePat {
+    pub pat: P<Pat>,
+    pub splt: bool,
+}
+
+impl SplattablePat {
+    pub fn unimplemented_splat(self) -> P<Pat> {
+        if self.splt {
+            todo!()
+        }
+        self.pat
+    }
+}
+impl SplattablePat {
+    pub(crate) fn to_ty(&self) -> Option<SplattableTy> {
+        Some(SplattableTy { ty: self.pat.to_ty()?, splt: self.splt })
+    }
+}
+impl SplattableExpr {
+    pub(crate) fn to_ty(&self) -> Option<SplattableTy> {
+        Some(SplattableTy { ty: self.expr.to_ty()?, splt: self.splt })
+    }
+}
 /// Represents a function's signature in a trait declaration,
 /// trait implementation, or free function.
 #[derive(Clone, Encodable, Decodable, Debug)]
@@ -2405,7 +2441,7 @@ pub enum TyKind {
     /// The never type (`!`).
     Never,
     /// A tuple (`(A, B, C, D,...)`).
-    Tup(ThinVec<P<Ty>>),
+    Tup(ThinVec<SplattableTy>),
     /// A path (`module::module::...::Type`), optionally
     /// "qualified", e.g., `<Vec<T> as SomeTrait>::SomeType`.
     ///

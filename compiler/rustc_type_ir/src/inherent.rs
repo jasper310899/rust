@@ -15,6 +15,12 @@ use crate::solve::AdtDestructorKind;
 use crate::visit::{Flags, TypeSuperVisitable, TypeVisitable};
 use crate::{self as ty, CollectAndApply, Interner, UpcastFrom};
 
+pub trait SplattableTy<I: Interner<SplattableTy = Self>> : Copy + Debug + Hash + Eq + Relate<I> + From<I::Ty> {
+    fn unimplemented_splat(&self) -> I::Ty;
+    fn splt(&self) -> bool;
+    fn ty(&self) -> I::Ty;
+}
+
 pub trait Ty<I: Interner<Ty = Self>>:
     Copy
     + Debug
@@ -99,12 +105,12 @@ pub trait Ty<I: Interner<Ty = Self>>:
 
     fn new_slice(interner: I, ty: Self) -> Self;
 
-    fn new_tup(interner: I, tys: &[I::Ty]) -> Self;
+    fn new_tup(interner: I, tys: &[I::SplattableTy]) -> Self;
 
     fn new_tup_from_iter<It, T>(interner: I, iter: It) -> T::Output
     where
         It: Iterator<Item = T>,
-        T: CollectAndApply<Self, Self>;
+        T: CollectAndApply<I::SplattableTy, Self>;
 
     fn new_fn_def(interner: I, def_id: I::DefId, args: I::GenericArgs) -> Self;
 
@@ -196,6 +202,8 @@ pub trait Tys<I: Interner<Tys = Self>>:
     fn inputs(self) -> I::FnInputTys;
 
     fn output(self) -> I::Ty;
+
+    fn non_splat_vec(self) -> Vec<I::Ty>;
 }
 
 pub trait Abi<I: Interner<Abi = Self>>: Copy + Debug + Hash + Eq {

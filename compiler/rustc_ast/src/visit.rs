@@ -562,7 +562,7 @@ pub fn walk_ty<'a, V: Visitor<'a>>(visitor: &mut V, typ: &'a Ty) -> V::Result {
             try_visit!(visitor.visit_ty(ty));
         }
         TyKind::Tup(tuple_element_types) => {
-            walk_list!(visitor, visit_ty, tuple_element_types);
+            walk_list!(visitor, visit_ty, tuple_element_types.iter().map(|a| &a.ty));
         }
         TyKind::BareFn(function_declaration) => {
             let BareFnTy { safety: _, ext: _, generic_params, decl, decl_span: _ } =
@@ -720,7 +720,7 @@ pub fn walk_pat<'a, V: Visitor<'a>>(visitor: &mut V, pattern: &'a Pat) -> V::Res
         PatKind::TupleStruct(opt_qself, path, elems) => {
             try_visit!(visitor.visit_qself(opt_qself));
             try_visit!(visitor.visit_path(path, *id));
-            walk_list!(visitor, visit_pat, elems);
+            walk_list!(visitor, visit_pat, elems.iter().map(|a| &a.pat));
         }
         PatKind::Path(opt_qself, path) => {
             try_visit!(visitor.visit_qself(opt_qself));
@@ -752,8 +752,11 @@ pub fn walk_pat<'a, V: Visitor<'a>>(visitor: &mut V, pattern: &'a Pat) -> V::Res
         }
         PatKind::Missing | PatKind::Wild | PatKind::Rest | PatKind::Never => {}
         PatKind::Err(_guar) => {}
-        PatKind::Tuple(elems) | PatKind::Slice(elems) | PatKind::Or(elems) => {
+        PatKind::Slice(elems) | PatKind::Or(elems) => {
             walk_list!(visitor, visit_pat, elems);
+        }
+        PatKind::Tuple(elems) => {
+            walk_list!(visitor, visit_pat, elems.iter().map(|a| &a.pat));
         }
         PatKind::MacCall(mac) => try_visit!(visitor.visit_mac_call(mac)),
     }
@@ -1207,7 +1210,7 @@ pub fn walk_expr<'a, V: Visitor<'a>>(visitor: &mut V, expression: &'a Expr) -> V
             }
         }
         ExprKind::Tup(subexpressions) => {
-            walk_list!(visitor, visit_expr, subexpressions);
+            walk_list!(visitor, visit_expr, subexpressions.iter().map(|splt| &splt.expr));
         }
         ExprKind::Call(callee_expression, arguments) => {
             try_visit!(visitor.visit_expr(callee_expression));

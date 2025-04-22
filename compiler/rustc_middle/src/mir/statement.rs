@@ -814,7 +814,7 @@ impl<'tcx> BinOp {
             &BinOp::AddWithOverflow | &BinOp::SubWithOverflow | &BinOp::MulWithOverflow => {
                 // these should be integers of the same size.
                 assert_eq!(lhs_ty, rhs_ty);
-                Ty::new_tup(tcx, &[lhs_ty, tcx.types.bool])
+                Ty::new_tup(tcx, &[lhs_ty.into(), tcx.types.bool.into()])
             }
             &BinOp::Shl
             | &BinOp::ShlUnchecked

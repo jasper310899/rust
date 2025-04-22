@@ -56,9 +56,19 @@ impl<'hir> LoweringContext<'_, 'hir> {
     fn lower_exprs(&mut self, exprs: &[AstP<Expr>]) -> &'hir [hir::Expr<'hir>] {
         self.arena.alloc_from_iter(exprs.iter().map(|x| self.lower_expr_mut(x)))
     }
+    fn lower_exprs_splat(&mut self, exprs: &[SplattableExpr]) -> &'hir [hir::Expr<'hir>] {
+        self.arena.alloc_from_iter(exprs.iter().map(|x| self.lower_expr_mut_splat(x)))
+    }
 
     pub(super) fn lower_expr(&mut self, e: &Expr) -> &'hir hir::Expr<'hir> {
         self.arena.alloc(self.lower_expr_mut(e))
+    }
+
+    pub(super) fn lower_expr_mut_splat(&mut self, e: &SplattableExpr) -> hir::Expr<'hir> {
+        if e.splt {
+            todo!()
+        }
+        self.lower_expr_mut(&e.expr)
     }
 
     pub(super) fn lower_expr_mut(&mut self, e: &Expr) -> hir::Expr<'hir> {
@@ -109,7 +119,7 @@ impl<'hir> LoweringContext<'_, 'hir> {
                     let count = self.lower_array_length_to_const_arg(count);
                     hir::ExprKind::Repeat(expr, count)
                 }
-                ExprKind::Tup(elts) => hir::ExprKind::Tup(self.lower_exprs(elts)),
+                ExprKind::Tup(elts) => hir::ExprKind::Tup(self.lower_exprs_splat(elts)),
                 ExprKind::Call(f, args) => {
                     if let Some(legacy_args) = self.resolver.legacy_const_generic_args(f) {
                         self.lower_legacy_const_generics((**f).clone(), args.clone(), &legacy_args)
@@ -1481,7 +1491,7 @@ impl<'hir> LoweringContext<'_, 'hir> {
             // Tuples.
             ExprKind::Tup(elements) => {
                 let (pats, rest) =
-                    self.destructure_sequence(elements, "tuple", eq_sign_span, assignments);
+                    self.destructure_sequence_splt(elements, "tuple", eq_sign_span, assignments);
                 let tuple_pat = hir::PatKind::Tuple(pats, hir::DotDotPos::new(rest.map(|r| r.0)));
                 return self.pat_without_dbm(lhs.span, tuple_pat);
             }
@@ -1522,6 +1532,35 @@ impl<'hir> LoweringContext<'_, 'hir> {
         let mut rest = None;
         let elements =
             self.arena.alloc_from_iter(elements.iter().enumerate().filter_map(|(i, e)| {
+                // Check for `..` pattern.
+                if let ExprKind::Range(None, None, RangeLimits::HalfOpen) = e.kind {
+                    if let Some((_, prev_span)) = rest {
+                        self.ban_extra_rest_pat(e.span, prev_span, ctx);
+                    } else {
+                        rest = Some((i, e.span));
+                    }
+                    None
+                } else {
+                    Some(self.destructure_assign_mut(e, eq_sign_span, assignments))
+                }
+            }));
+        (elements, rest)
+    }
+    
+    fn destructure_sequence_splt(
+        &mut self,
+        elements: &[SplattableExpr],
+        ctx: &str,
+        eq_sign_span: Span,
+        assignments: &mut Vec<hir::Stmt<'hir>>,
+    ) -> (&'hir [hir::Pat<'hir>], Option<(usize, Span)>) {
+        let mut rest = None;
+        let elements =
+            self.arena.alloc_from_iter(elements.iter().enumerate().filter_map(|(i, e)| {
+                if e.splt {
+                    todo!();
+                }
+                let e = &e.expr;
                 // Check for `..` pattern.
                 if let ExprKind::Range(None, None, RangeLimits::HalfOpen) = e.kind {
                     if let Some((_, prev_span)) = rest {

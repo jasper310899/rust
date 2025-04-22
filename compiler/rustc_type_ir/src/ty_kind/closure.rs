@@ -303,10 +303,10 @@ impl<I: Interner> CoroutineClosureArgs<I> {
             };
             CoroutineClosureSignature {
                 interior,
-                tupled_inputs_ty,
-                resume_ty,
-                yield_ty,
-                return_ty,
+                tupled_inputs_ty: tupled_inputs_ty.unimplemented_splat(),
+                resume_ty: resume_ty.unimplemented_splat(),
+                yield_ty: yield_ty.unimplemented_splat(),
+                return_ty: return_ty.unimplemented_splat(),
                 c_variadic: hdr.c_variadic,
                 safety: hdr.safety,
                 abi: hdr.abi,

@@ -367,6 +367,13 @@ impl<'a> State<'a> {
         }
     }
 
+    fn print_splat(&mut self, ty: &hir::SplattableTy<'_>) {
+        if ty.splat {
+            self.word("...");
+        }
+        self.print_type(&ty.ty);
+    }
+
     fn print_type(&mut self, ty: &hir::Ty<'_>) {
         self.maybe_print_comment(ty.span.lo());
         self.ibox(0);
@@ -390,7 +397,7 @@ impl<'a> State<'a> {
             }
             hir::TyKind::Tup(elts) => {
                 self.popen();
-                self.commasep(Inconsistent, elts, |s, ty| s.print_type(ty));
+                self.commasep(Inconsistent, elts, |s, ty| s.print_splat(ty));
                 if elts.len() == 1 {
                     self.word(",");
                 }
@@ -1804,7 +1811,7 @@ impl<'a> State<'a> {
                 let (inputs, output) = generic_args.paren_sugar_inputs_output().unwrap();
 
                 self.word("(");
-                self.commasep(Inconsistent, inputs, |s, ty| s.print_type(ty));
+                self.commasep(Inconsistent, inputs, |s, ty| s.print_splat(ty));
                 self.word(")");
 
                 self.space_if_not_bol();

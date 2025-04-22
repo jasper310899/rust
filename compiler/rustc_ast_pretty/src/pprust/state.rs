@@ -16,9 +16,7 @@ use rustc_ast::tokenstream::{Spacing, TokenStream, TokenTree};
 use rustc_ast::util::classify;
 use rustc_ast::util::comments::{Comment, CommentStyle};
 use rustc_ast::{
-    self as ast, AttrArgs, BindingMode, BlockCheckMode, ByRef, DelimArgs, GenericArg, GenericBound,
-    InlineAsmOperand, InlineAsmOptions, InlineAsmRegOrRegClass, InlineAsmTemplatePiece, PatKind,
-    RangeEnd, RangeSyntax, Safety, SelfKind, Term, attr,
+    self as ast, attr, AttrArgs, BindingMode, BlockCheckMode, ByRef, DelimArgs, GenericArg, GenericBound, InlineAsmOperand, InlineAsmOptions, InlineAsmRegOrRegClass, InlineAsmTemplatePiece, PatKind, RangeEnd, RangeSyntax, Safety, SelfKind, SplattableExpr, SplattablePat, SplattableTy, Term
 };
 use rustc_span::edition::Edition;
 use rustc_span::source_map::{SourceMap, Spanned};
@@ -1109,6 +1107,9 @@ impl<'a> State<'a> {
     fn commasep_exprs(&mut self, b: Breaks, exprs: &[P<ast::Expr>]) {
         self.commasep_cmnt(b, exprs, |s, e| s.print_expr(e, FixupContext::default()), |e| e.span)
     }
+    fn commasep_exprs_splat(&mut self, b: Breaks, exprs: &[SplattableExpr]) {
+        self.commasep_cmnt(b, exprs, |s, e| s.print_expr_splt(e, FixupContext::default()), |e| e.expr.span)
+    }
 
     pub fn print_opt_lifetime(&mut self, lifetime: &Option<ast::Lifetime>) {
         if let Some(lt) = *lifetime {
@@ -1170,6 +1171,13 @@ impl<'a> State<'a> {
         }
     }
 
+    pub fn print_splattable(&mut self, splttable: &SplattableTy) {
+        if splttable.splt {
+            self.word("...");
+        }
+        self.print_type(&splttable.ty);
+    }
+
     pub fn print_type(&mut self, ty: &ast::Ty) {
         self.maybe_print_comment(ty.span.lo());
         self.ibox(0);
@@ -1199,7 +1207,7 @@ impl<'a> State<'a> {
             }
             ast::TyKind::Tup(elts) => {
                 self.popen();
-                self.commasep(Inconsistent, elts, |s, ty| s.print_type(ty));
+                self.commasep(Inconsistent, elts, |s, ty| s.print_splattable(ty));
                 if elts.len() == 1 {
                     self.word(",");
                 }
@@ -1611,6 +1619,13 @@ impl<'a> State<'a> {
         }
     }
 
+    fn print_pat_splt(&mut self, pat: &SplattablePat) {
+        if pat.splt {
+            self.word("...");
+        }
+        self.print_pat(&pat.pat);
+    }
+
     fn print_pat(&mut self, pat: &ast::Pat) {
         self.maybe_print_comment(pat.span.lo());
         self.ann.pre(self, AnnNode::Pat(pat));
@@ -1643,7 +1658,7 @@ impl<'a> State<'a> {
                     self.print_path(path, true, 0);
                 }
                 self.popen();
-                self.commasep(Inconsistent, elts, |s, p| s.print_pat(p));
+                self.commasep(Inconsistent, elts, |s, p| s.print_pat_splt(p));
                 self.pclose();
             }
             PatKind::Or(pats) => {
@@ -1697,7 +1712,7 @@ impl<'a> State<'a> {
             }
             PatKind::Tuple(elts) => {
                 self.popen();
-                self.commasep(Inconsistent, elts, |s, p| s.print_pat(p));
+                self.commasep(Inconsistent, elts, |s, p| s.print_pat_splt(p));
                 if elts.len() == 1 {
                     self.word(",");
                 }

@@ -110,6 +110,9 @@ pub enum TyKind<I: Interner> {
     /// The pointee of a string slice. Written as `str`.
     Str,
 
+    /// ...x
+    Splat(I::Ty, bool),
+
     /// An array with the given length. Written as `[T; N]`.
     Array(I::Ty, I::Const),
 
@@ -329,7 +332,8 @@ impl<I: Interner> TyKind<I> {
             | ty::Alias(_, _)
             | ty::Param(_)
             | ty::Bound(_, _)
-            | ty::Placeholder(_) => false,
+            | ty::Placeholder(_) 
+            | ty::Splat(..) => false,
         }
     }
 }
@@ -363,6 +367,13 @@ impl<I: Interner> fmt::Debug for TyKind<I> {
             Array(t, c) => write!(f, "[{t:?}; {c:?}]"),
             Pat(t, p) => write!(f, "pattern_type!({t:?} is {p:?})"),
             Slice(t) => write!(f, "[{:?}]", &t),
+            Splat(t, splt) => {
+                if *splt {
+                    write!(f, "...{:?}", &t)
+                } else {
+                    write!(f, "{:?}", &t)
+                }
+            }
             RawPtr(ty, mutbl) => write!(f, "*{} {:?}", mutbl.ptr_str(), ty),
             Ref(r, t, m) => write!(f, "&{:?} {}{:?}", r, m.prefix_str(), t),
             FnDef(d, s) => f.debug_tuple("FnDef").field(d).field(&s).finish(),
@@ -987,7 +998,7 @@ impl<I: Interner> ty::Binder<I, FnSig<I>> {
 
     #[inline]
     #[track_caller]
-    pub fn input(self, index: usize) -> ty::Binder<I, I::Ty> {
+    pub fn input(self, index: usize) -> ty::Binder<I, I::SplattableTy> {
         self.map_bound(|fn_sig| fn_sig.inputs().get(index).unwrap())
     }
 
@@ -1160,7 +1171,7 @@ impl<I: Interner> ty::Binder<I, FnSigTys<I>> {
 
     #[inline]
     #[track_caller]
-    pub fn input(self, index: usize) -> ty::Binder<I, I::Ty> {
+    pub fn input(self, index: usize) -> ty::Binder<I, I::SplattableTy> {
         self.map_bound(|sig_tys| sig_tys.inputs().get(index).unwrap())
     }
 

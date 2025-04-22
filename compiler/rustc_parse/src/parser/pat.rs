@@ -7,8 +7,7 @@ use rustc_ast::token::{self, IdentIsRaw, MetaVarKind, Token};
 use rustc_ast::util::parser::ExprPrecedence;
 use rustc_ast::visit::{self, Visitor};
 use rustc_ast::{
-    self as ast, Arm, AttrVec, BindingMode, ByRef, Expr, ExprKind, LocalKind, MacCall, Mutability,
-    Pat, PatField, PatFieldsRest, PatKind, Path, QSelf, RangeEnd, RangeSyntax, Stmt, StmtKind,
+    self as ast, Arm, AttrVec, BindingMode, ByRef, Expr, ExprKind, LocalKind, MacCall, Mutability, Pat, PatField, PatFieldsRest, PatKind, Path, QSelf, RangeEnd, RangeSyntax, SplattableExpr, SplattablePat, Stmt, StmtKind
 };
 use rustc_ast_pretty::pprust;
 use rustc_errors::{Applicability, Diag, DiagArgValue, PResult, StashKey};
@@ -108,15 +107,21 @@ impl<'a> Parser<'a> {
         rc: RecoverComma,
         ra: RecoverColon,
         rt: CommaRecoveryMode,
-    ) -> PResult<'a, P<Pat>> {
+    ) -> PResult<'a, SplattablePat> {
         let pat = self.parse_pat_no_top_guard(expected, rc, ra, rt)?;
 
         if self.eat_keyword(exp!(If)) {
+            let pat = if pat.splt {
+                todo!()
+            } else {
+                pat.pat
+            };
+
             let cond = self.parse_expr()?;
             // Feature-gate guard patterns
             self.psess.gated_spans.gate(sym::guard_patterns, cond.span);
             let span = pat.span.to(cond.span);
-            Ok(self.mk_pat(span, PatKind::Guard(pat, cond)))
+            Ok(SplattablePat { pat: self.mk_pat(span, PatKind::Guard(pat, cond)), splt: false })
         } else {
             Ok(pat)
         }
@@ -150,7 +155,7 @@ impl<'a> Parser<'a> {
         rc: RecoverComma,
         ra: RecoverColon,
         rt: CommaRecoveryMode,
-    ) -> PResult<'a, P<Pat>> {
+    ) -> PResult<'a, SplattablePat> {
         self.parse_pat_no_top_guard_inner(expected, rc, ra, rt, None).map(|(pat, _)| pat)
     }
 
@@ -163,7 +168,16 @@ impl<'a> Parser<'a> {
         ra: RecoverColon,
         rt: CommaRecoveryMode,
         syntax_loc: Option<PatternLocation>,
-    ) -> PResult<'a, (P<Pat>, bool)> {
+    ) -> PResult<'a, (SplattablePat, bool)> {
+        if self.eat(exp!(DotDotDot)) {
+            let res = self.parse_pat_no_top_guard_inner(expected, rc, ra, rt, syntax_loc)?;
+            let (bl, res) = if res.0.splt {
+                todo!()
+            } else {
+                (res.1, res.0.pat)
+            };
+            return Ok((SplattablePat {pat: res, splt: true}, bl) )
+        }
         // Keep track of whether we recovered from a trailing vert so that we can avoid duplicated
         // suggestions (which bothers rustfix).
         //
@@ -700,7 +714,7 @@ impl<'a> Parser<'a> {
                 CommaRecoveryMode::EitherTupleOrPipe,
             )
         }) {
-            Some(pat)
+            Some(pat.unimplemented_splat())
         } else {
             None
         }
@@ -742,12 +756,12 @@ impl<'a> Parser<'a> {
             // Parse `[pat, pat,...]` as a slice pattern.
             let (pats, _) =
                 self.parse_delim_comma_seq(exp!(OpenBracket), exp!(CloseBracket), |p| {
-                    p.parse_pat_allow_top_guard(
+                    Ok(p.parse_pat_allow_top_guard(
                         None,
                         RecoverComma::No,
                         RecoverColon::No,
                         CommaRecoveryMode::EitherTupleOrPipe,
-                    )
+                    )?.unimplemented_splat())
                 })?;
             PatKind::Slice(pats)
         } else if self.check(exp!(DotDot)) && !self.is_pat_range_end_start(1) {
@@ -1001,10 +1015,10 @@ impl<'a> Parser<'a> {
         // Here, `(pat,)` is a tuple pattern.
         // For backward compatibility, `(..)` is a tuple pattern as well.
         let paren_pattern =
-            fields.len() == 1 && !(matches!(trailing_comma, Trailing::Yes) || fields[0].is_rest());
+            fields.len() == 1 && !(matches!(trailing_comma, Trailing::Yes) || fields[0].pat.is_rest());
 
         let pat = if paren_pattern {
-            let pat = fields.into_iter().next().unwrap();
+            let pat = fields.into_iter().next().unwrap().unimplemented_splat();
             let close_paren = self.prev_token.span;
 
             match &pat.kind {
@@ -1444,7 +1458,7 @@ impl<'a> Parser<'a> {
                     RecoverComma::Yes,
                     RecoverColon::Yes,
                     CommaRecoveryMode::LikelyTuple,
-                )?)),
+                )?.unimplemented_splat())),
                 _ => None,
             })
         })
@@ -1720,6 +1734,7 @@ impl<'a> Parser<'a> {
                 RecoverColon::No,
                 CommaRecoveryMode::EitherTupleOrPipe,
             )?;
+            let pat = pat.unimplemented_splat();
             hi = pat.span;
             (pat, fieldname, false)
         } else {

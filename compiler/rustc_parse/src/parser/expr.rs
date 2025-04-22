@@ -14,10 +14,7 @@ use rustc_ast::util::classify;
 use rustc_ast::util::parser::{AssocOp, ExprPrecedence, Fixity, prec_let_scrutinee_needs_par};
 use rustc_ast::visit::{Visitor, walk_expr};
 use rustc_ast::{
-    self as ast, AnonConst, Arm, AssignOp, AssignOpKind, AttrStyle, AttrVec, BinOp, BinOpKind,
-    BlockCheckMode, CaptureBy, ClosureBinder, DUMMY_NODE_ID, Expr, ExprField, ExprKind, FnDecl,
-    FnRetTy, Label, MacCall, MetaItemLit, Movability, Param, RangeLimits, StmtKind, Ty, TyKind,
-    UnOp, UnsafeBinderCastKind, YieldKind,
+    self as ast, AnonConst, Arm, AssignOp, AssignOpKind, AttrStyle, AttrVec, BinOp, BinOpKind, BlockCheckMode, CaptureBy, ClosureBinder, Expr, ExprField, ExprKind, FnDecl, FnRetTy, Label, MacCall, MetaItemLit, Movability, Param, RangeLimits, SplattableExpr, StmtKind, Ty, TyKind, UnOp, UnsafeBinderCastKind, YieldKind, DUMMY_NODE_ID
 };
 use rustc_data_structures::stack::ensure_sufficient_stack;
 use rustc_errors::{Applicability, Diag, PResult, StashKey, Subdiagnostic};
@@ -90,6 +87,23 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_expr_catch_underscore(&mut self, restrictions: Restrictions) -> PResult<'a, P<Expr>> {
+        let attrs = self.parse_outer_attributes()?;
+        match self.parse_expr_res(restrictions, attrs) {
+            Ok((expr, _)) => Ok(expr),
+            Err(err) => match self.token.ident() {
+                Some((Ident { name: kw::Underscore, .. }, IdentIsRaw::No))
+                    if self.may_recover() && self.look_ahead(1, |t| t == &token::Comma) =>
+                {
+                    // Special-case handling of `foo(_, _, _)`
+                    let guar = err.emit();
+                    self.bump();
+                    Ok(self.mk_expr(self.prev_token.span, ExprKind::Err(guar)))
+                }
+                _ => Err(err),
+            },
+        }
+    }
+    fn parse_expr_catch_underscore_splat(&mut self, restrictions: Restrictions) -> PResult<'a, SplattableExpr> {
         let attrs = self.parse_outer_attributes()?;
         match self.parse_expr_res(restrictions, attrs) {
             Ok((expr, _)) => Ok(expr),
@@ -1563,7 +1577,7 @@ impl<'a> Parser<'a> {
         let (es, trailing_comma) = match self.parse_seq_to_end(
             exp!(CloseParen),
             SeqSep::trailing_allowed(exp!(Comma)),
-            |p| p.parse_expr_catch_underscore(restrictions.intersection(Restrictions::ALLOW_LET)),
+            |p| p.parse_expr_catch_underscore_splat(restrictions.intersection(Restrictions::ALLOW_LET)),
         ) {
             Ok(x) => x,
             Err(err) => {
@@ -3968,6 +3982,9 @@ impl<'a> Parser<'a> {
 
     pub(crate) fn mk_expr(&self, span: Span, kind: ExprKind) -> P<Expr> {
         self.mk_expr_with_attrs(span, kind, AttrVec::new())
+    }
+    pub(crate) fn mk_expr_splattable(&self, span: Span, kind: ExprKind, splt: bool) -> SplattableExpr {
+        SplattableExpr { expr: self.mk_expr(span, kind), splt }
     }
 
     pub(super) fn mk_expr_err(&self, span: Span, guar: ErrorGuaranteed) -> P<Expr> {

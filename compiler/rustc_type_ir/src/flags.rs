@@ -416,9 +416,13 @@ impl<I: Interner> FlagComputation<I> {
         self.add_exclusive_binder(ty.outer_exclusive_binder());
     }
 
+    fn add_ty_splattable(&mut self, ty: I::SplattableTy) {
+        self.add_ty(ty.ty());
+    }
+
     fn add_tys(&mut self, tys: I::Tys) {
         for ty in tys.iter() {
-            self.add_ty(ty);
+            self.add_ty_splattable(ty);
         }
     }
 

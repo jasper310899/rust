@@ -23,7 +23,7 @@ mod lint;
 use std::assert_matches::assert_matches;
 use std::slice;
 
-use rustc_ast::TraitObjectSyntax;
+use rustc_ast::{SplattableTy, TraitObjectSyntax};
 use rustc_data_structures::fx::{FxHashSet, FxIndexMap, FxIndexSet};
 use rustc_errors::codes::*;
 use rustc_errors::{
@@ -31,7 +31,7 @@ use rustc_errors::{
 };
 use rustc_hir::def::{CtorKind, CtorOf, DefKind, Namespace, Res};
 use rustc_hir::def_id::{DefId, LocalDefId};
-use rustc_hir::{self as hir, AnonConst, GenericArg, GenericArgs, HirId};
+use rustc_hir::{self as hir, AnonConst, GenericArg, GenericArgs, HirId, SplattableTy};
 use rustc_infer::infer::{InferCtxt, TyCtxtInferExt};
 use rustc_infer::traits::ObligationCause;
 use rustc_middle::middle::stability::AllowUnstable;
@@ -2563,6 +2563,13 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
         }
     }
 
+    pub fn lower_ty_splt(&self, sp: &hir::SplattableTy) -> rustc_middle::ty::SplattableTy {
+        rustc_middle::ty::SplattableTy {
+            ty: self.lower_ty(sp.ty),
+            splat: sp.splt,
+        }
+    }
+
     /// Lower a type from the HIR to our internal notion of a type.
     #[instrument(level = "debug", skip(self), ret)]
     pub fn lower_ty(&self, hir_ty: &hir::Ty<'tcx>) -> Ty<'tcx> {
@@ -2580,7 +2587,7 @@ impl<'tcx> dyn HirTyLowerer<'tcx> + '_ {
             }
             hir::TyKind::Never => tcx.types.never,
             hir::TyKind::Tup(fields) => {
-                Ty::new_tup_from_iter(tcx, fields.iter().map(|t| self.lower_ty(t)))
+                Ty::new_tup_from_iter(tcx, fields.iter().map(|t| self.lower_ty_splt(t)))
             }
             hir::TyKind::BareFn(bf) => {
                 require_c_abi_if_c_variadic(tcx, bf.decl, bf.abi, hir_ty.span);

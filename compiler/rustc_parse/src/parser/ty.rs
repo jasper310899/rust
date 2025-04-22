@@ -2,10 +2,7 @@ use rustc_ast::ptr::P;
 use rustc_ast::token::{self, IdentIsRaw, MetaVarKind, Token, TokenKind};
 use rustc_ast::util::case::Case;
 use rustc_ast::{
-    self as ast, BareFnTy, BoundAsyncness, BoundConstness, BoundPolarity, DUMMY_NODE_ID, FnRetTy,
-    GenericBound, GenericBounds, GenericParam, Generics, Lifetime, MacCall, MutTy, Mutability,
-    Pinnedness, PolyTraitRef, PreciseCapturingArg, TraitBoundModifiers, TraitObjectSyntax, Ty,
-    TyKind, UnsafeBinderTy,
+    self as ast, BareFnTy, BoundAsyncness, BoundConstness, BoundPolarity, FnRetTy, GenericBound, GenericBounds, GenericParam, Generics, Lifetime, MacCall, MutTy, Mutability, Pinnedness, PolyTraitRef, PreciseCapturingArg, SplattableTy, TraitBoundModifiers, TraitObjectSyntax, Ty, TyKind, UnsafeBinderTy, DUMMY_NODE_ID
 };
 use rustc_errors::{Applicability, Diag, PResult};
 use rustc_span::{ErrorGuaranteed, Ident, Span, kw, sym};
@@ -392,20 +389,32 @@ impl<'a> Parser<'a> {
         Ok(TyKind::UnsafeBinder(P(UnsafeBinderTy { generic_params, inner_ty })))
     }
 
+    fn parse_ty_splat(&mut self) -> PResult<'a, SplattableTy> {
+        if self.eat(exp!(DotDotDot)) {
+            Ok(SplattableTy { ty: self.parse_ty()?, splt: true })
+        } else {
+            Ok(SplattableTy { ty: self.parse_ty()?, splt: false })
+        }
+    }
+
     /// Parses either:
     /// - `(TYPE)`, a parenthesized type.
     /// - `(TYPE,)`, a tuple with a single field of type TYPE.
     fn parse_ty_tuple_or_parens(&mut self, lo: Span, allow_plus: AllowPlus) -> PResult<'a, TyKind> {
         let mut trailing_plus = false;
         let (ts, trailing) = self.parse_paren_comma_seq(|p| {
-            let ty = p.parse_ty()?;
+            let ty = p.parse_ty_splat()?;
             trailing_plus = p.prev_token == TokenKind::Plus;
             Ok(ty)
         })?;
 
         if ts.len() == 1 && matches!(trailing, Trailing::No) {
-            let ty = ts.into_iter().next().unwrap().into_inner();
+            let ty = ts.into_iter().next().unwrap();
             let maybe_bounds = allow_plus == AllowPlus::Yes && self.token.is_like_plus();
+            if ty.splt {
+                todo!();
+            }
+            let ty = ty.ty.into_inner();
             match ty.kind {
                 // `(TY_BOUND_NOPAREN) + BOUND + ...`.
                 TyKind::Path(None, path) if maybe_bounds => {
